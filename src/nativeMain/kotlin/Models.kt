@@ -48,4 +48,4 @@ enum class Behavior(val deltaX: Int, val deltaY: Int) {
 
 data class Coordinate(val x: Int, val y: Int)
 
-data class Brain(val weights: List<List<Float>>)
+data class Brain(val id: Int, val weights: List<List<Float>>)

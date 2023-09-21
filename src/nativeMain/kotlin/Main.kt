@@ -2,9 +2,13 @@ import Behavior.*
 import kotlin.random.Random
 
 fun main() {
-    val world = World(size = 20, organisms = initializeOrganisms(size = 20, numberOfOrganism = 1))
+    val size = 30
+    val world = World(
+        size = size,
+        organisms = initializeOrganisms(size = size, numberOfSpecies = 5, numberOfOrganismsPerSpecies = 20)
+    )
     printWorld(world, iteration = 0)
-    (1..10).fold(world) { acc: World, i: Int ->
+    (1..100).fold(world) { acc: World, i: Int ->
         val newWorld = progressTime(acc)
         printWorld(acc, i)
         newWorld
@@ -14,26 +18,32 @@ fun main() {
 
 }
 
-fun initializeOrganisms(size: Int, numberOfOrganism: Int): List<Organism> {
+fun initializeOrganisms(size: Int, numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<Organism> {
     val possibleCoordinates: List<Coordinate> = (0..<size)
         .flatMap { x ->
             (0..<size)
                 .map { y -> Coordinate(x = x, y = y) }
         }
+    val brains = (0..numberOfSpecies).flatMap {
+        val brain = getRandomBrain(5, 5, it)
+        (0..numberOfOrganismsPerSpecies)
+            .map { brain }
 
+    }
     return possibleCoordinates
         .shuffled()
-        .take(numberOfOrganism)
-        .map { Organism(coordinate = it, brain = getRandomBrain(5, 5)) }
+        .zip(brains)
+        .take(numberOfSpecies * numberOfOrganismsPerSpecies)
+        .map { Organism(coordinate = it.first, brain = it.second) }
 }
 
-fun getRandomBrain(inputAmount: Int, outputAmount: Int): Brain {
+fun getRandomBrain(inputAmount: Int, outputAmount: Int, id: Int): Brain {
     val weights: List<List<Float>> = (0..<outputAmount).map {
         (0..inputAmount).map {
             Random.nextFloat() * 2 - 1
         }
     }
-    return Brain(weights = weights)
+    return Brain(weights = weights, id = id)
 }
 
 fun progressTime(world: World): World = (0..<world.organisms.size)
@@ -51,7 +61,7 @@ fun progressOrganism(world: World, organism: Organism): World {
         GO_NORTH,
         GO_EAST,
         GO_SOUTH,
-        GO_WEST -> goX(world, organism, behaviour.deltaX, behaviour.deltaY)
+        GO_WEST -> moveOrganism(world, organism, behaviour.deltaX, behaviour.deltaY)
     }
 }
 
@@ -63,7 +73,7 @@ fun isCoordinateAvailable(world: World, coordinate: Coordinate): Boolean {
     return world.organisms.none { it.coordinate.x == coordinate.x && it.coordinate.y == coordinate.y }
 }
 
-fun goX(world: World, organism: Organism, deltaX: Int, deltaY: Int): World {
+fun moveOrganism(world: World, organism: Organism, deltaX: Int, deltaY: Int): World {
     val candidate = Coordinate(x = organism.coordinate.x + deltaX, y = organism.coordinate.y + deltaY)
     return if (isWithinBoundaries(world, candidate) && isCoordinateAvailable(world, candidate)) {
         val newOrganism = organism.copy(coordinate = candidate)
