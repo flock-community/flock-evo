@@ -1,13 +1,16 @@
 import Behavior.*
+import kotlin.random.Random
 
 fun main() {
-    val world = World(size = 20, organisms = initializeOrganisms(size = 20, numberOfOrganism = 20))
+    val world = World(size = 20, organisms = initializeOrganisms(size = 20, numberOfOrganism = 1))
     printWorld(world, iteration = 0)
     (1..10).fold(world) { acc: World, i: Int ->
         val newWorld = progressTime(acc)
         printWorld(acc, i)
         newWorld
     }
+
+    println(world.organisms.first().brain)
 
 }
 
@@ -21,14 +24,29 @@ fun initializeOrganisms(size: Int, numberOfOrganism: Int): List<Organism> {
     return possibleCoordinates
         .shuffled()
         .take(numberOfOrganism)
-        .map { Organism(coordinate = it, brain = Brain(inputNeurons = listOf())) }
+        .map { Organism(coordinate = it, brain = getRandomBrain(5, 5)) }
+}
+
+fun getRandomBrain(inputAmount: Int, outputAmount: Int): Brain {
+    val weights: List<List<Float>> = (0..<outputAmount).map {
+        (0..inputAmount).map {
+            Random.nextFloat() * 2 - 1
+        }
+    }
+    return Brain(weights = weights)
 }
 
 fun progressTime(world: World): World = (0..<world.organisms.size)
     .fold(world) { acc: World, i: Int -> progressOrganism(acc, world.organisms[i]) }
 
 fun progressOrganism(world: World, organism: Organism): World {
-    return when (val behaviour = organism.stateIntention()) {
+    return when (val behaviour = organism.stateIntention(
+        northBlocked = 0,
+        eastBlocked = 0,
+        southBlocked = 0,
+        westBlocked = 0,
+        age = 0
+    )) {
         DO_NOTHING -> world
         GO_NORTH,
         GO_EAST,
