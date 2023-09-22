@@ -2,21 +2,28 @@ import Behavior.*
 import kotlin.random.Random
 
 fun main() {
-    val size = 30
+    val size = 300
     val world = World(
         size = size,
         organisms = initializeOrganisms(size = size, numberOfSpecies = 5, numberOfOrganismsPerSpecies = 20)
     )
-    printWorld(world, iteration = 0)
-    (1..100).fold(world) { acc: World, i: Int ->
-        val newWorld = progressTime(acc)
-        printWorld(acc, i)
-        newWorld
-    }
-
-    println(world.organisms.first().brain)
+    val worldIterations: List <World> = runGeneration(maxAge = 100, world = world)
+    printWorld(world = worldIterations.first(), iteration = 0)
+    printWorld(world = worldIterations.last(), iteration = worldIterations.size)
 
 }
+
+fun runGeneration(maxAge: Int, world: World): List <World> = (0..maxAge)
+    .fold(listOf<World>(world)) { oldWorlds: List<World>, _: Int ->
+        oldWorlds.last().let { lastWorld ->
+            val worldBeforeLast = oldWorlds.getOrNull(oldWorlds.size - 2)
+            worldBeforeLast?.let {
+                if (lastWorld == it) oldWorlds else {
+                    oldWorlds + progressTime(lastWorld)
+                }
+            } ?: (oldWorlds + progressTime(lastWorld))
+        }
+    }
 
 fun initializeOrganisms(size: Int, numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<Organism> {
     val possibleCoordinates: List<Coordinate> = (0..<size)
@@ -51,10 +58,10 @@ fun progressTime(world: World): World = (0..<world.organisms.size)
 
 fun progressOrganism(world: World, organism: Organism): World {
     return when (val behaviour = organism.stateIntention(
-        northBlocked = 0,
-        eastBlocked = 0,
-        southBlocked = 0,
-        westBlocked = 0,
+        northBlocked = isTileBlocked(world = world, coordinate = organism.coordinate, deltaX = 0, deltaY = 1),
+        eastBlocked = isTileBlocked(world = world, coordinate = organism.coordinate, deltaX = 1, deltaY = 0),
+        southBlocked = isTileBlocked(world = world, coordinate = organism.coordinate, deltaX = 0, deltaY = -1),
+        westBlocked = isTileBlocked(world = world, coordinate = organism.coordinate, deltaX = -1, deltaY = 0),
         age = 0
     )) {
         DO_NOTHING -> world
@@ -63,6 +70,14 @@ fun progressOrganism(world: World, organism: Organism): World {
         GO_SOUTH,
         GO_WEST -> moveOrganism(world, organism, behaviour.deltaX, behaviour.deltaY)
     }
+}
+
+fun isTileBlocked(world: World, coordinate: Coordinate, deltaX: Int, deltaY: Int): Boolean {
+    val newCoordinate = Coordinate(x = coordinate.x + deltaX, y = coordinate.y + deltaY)
+    return isWithinBoundaries(world = world, newCoordinate) && isCoordinateAvailable(
+        world = world,
+        coordinate = newCoordinate
+    )
 }
 
 fun isWithinBoundaries(world: World, coordinate: Coordinate): Boolean {

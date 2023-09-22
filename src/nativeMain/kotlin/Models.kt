@@ -4,15 +4,16 @@ data class World(val size: Int, val organisms: List<Organism>)
 
 data class Organism(val coordinate: Coordinate, val brain: Brain) {
     fun stateIntention(
-        northBlocked: Int,
-        eastBlocked: Int,
-        southBlocked: Int,
-        westBlocked: Int,
+        northBlocked: Boolean,
+        eastBlocked: Boolean,
+        southBlocked: Boolean,
+        westBlocked: Boolean,
         age: Int
     ): Behavior {
 
+
         val matrixProduct = multiplyMatrix(
-            inputs = listOf(northBlocked, eastBlocked, southBlocked, westBlocked, age, 1),
+            inputs = listOf(northBlocked.toInt(), eastBlocked.toInt(), southBlocked.toInt(), westBlocked.toInt(), age, 1),
             weights = brain.weights
         )
 
@@ -22,6 +23,8 @@ data class Organism(val coordinate: Coordinate, val brain: Brain) {
 
         return Behavior.entries[outputIndex]
     }
+
+    private fun Boolean.toInt(): Int = if (this) 1 else 0
 
     private fun multiplyMatrix(inputs: List<Int>, weights: List<List<Float>>): List<Float> {
         val matrixProduct: List<Float> = weights.map { row ->
