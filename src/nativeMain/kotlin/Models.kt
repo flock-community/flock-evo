@@ -1,6 +1,6 @@
 import kotlin.math.tanh
 
-data class World(val size: Int, val organisms: List<Organism>)
+data class World(val size: Int, val organisms: List<Organism>, val coordinateMap: Map<Coordinate, Organism>)
 
 data class Organism(val coordinate: Coordinate, val brain: Brain) {
     fun stateIntention(

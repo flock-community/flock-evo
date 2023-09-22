@@ -5,7 +5,8 @@ fun main() {
     val size = 300
     val world = World(
         size = size,
-        organisms = initializeOrganisms(size = size, numberOfSpecies = 5, numberOfOrganismsPerSpecies = 20)
+        organisms = initializeOrganisms(size = size, numberOfSpecies = 5, numberOfOrganismsPerSpecies = 100),
+        HashMap()
     )
     val worldIterations: List <World> = runGeneration(maxAge = 100, world = world)
     printWorld(world = worldIterations.first(), iteration = 0)
@@ -85,7 +86,8 @@ fun isWithinBoundaries(world: World, coordinate: Coordinate): Boolean {
 }
 
 fun isCoordinateAvailable(world: World, coordinate: Coordinate): Boolean {
-    return world.organisms.none { it.coordinate.x == coordinate.x && it.coordinate.y == coordinate.y }
+    return world.coordinateMap.containsKey(coordinate)
+//    return world.organisms.none { it.coordinate.x == coordinate.x && it.coordinate.y == coordinate.y }
 }
 
 fun moveOrganism(world: World, organism: Organism, deltaX: Int, deltaY: Int): World {
@@ -93,7 +95,8 @@ fun moveOrganism(world: World, organism: Organism, deltaX: Int, deltaY: Int): Wo
     return if (isWithinBoundaries(world, candidate) && isCoordinateAvailable(world, candidate)) {
         val newOrganism = organism.copy(coordinate = candidate)
         val organisms = world.organisms.map { if (organism == it) newOrganism else it }
-        world.copy(organisms = organisms)
+        val coordinateMap = (world.coordinateMap - organism.coordinate) + (candidate to organism)
+        world.copy(organisms = organisms, coordinateMap = coordinateMap)
     } else {
         world
     }
