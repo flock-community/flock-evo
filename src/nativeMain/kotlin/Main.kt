@@ -74,11 +74,8 @@ fun progressOrganism(world: World, organism: Organism): World {
 }
 
 fun isTileBlocked(world: World, coordinate: Coordinate, deltaX: Int, deltaY: Int): Boolean {
-    val newCoordinate = Coordinate(x = coordinate.x + deltaX, y = coordinate.y + deltaY)
-    return isWithinBoundaries(world = world, newCoordinate) && isCoordinateAvailable(
-        world = world,
-        coordinate = newCoordinate
-    )
+    val newCoordinate = Coordinate(coordinate.x + deltaX, coordinate.y + deltaY)
+    return isWithinBoundaries(world, newCoordinate) && isCoordinateAvailable(world, newCoordinate)
 }
 
 fun isWithinBoundaries(world: World, coordinate: Coordinate): Boolean {
@@ -87,7 +84,6 @@ fun isWithinBoundaries(world: World, coordinate: Coordinate): Boolean {
 
 fun isCoordinateAvailable(world: World, coordinate: Coordinate): Boolean {
     return world.coordinateMap.containsKey(coordinate)
-//    return world.organisms.none { it.coordinate.x == coordinate.x && it.coordinate.y == coordinate.y }
 }
 
 fun moveOrganism(world: World, organism: Organism, deltaX: Int, deltaY: Int): World {
