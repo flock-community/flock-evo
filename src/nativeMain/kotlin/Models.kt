@@ -1,7 +1,9 @@
 import kotlin.math.tanh
+import kotlin.test.assertEquals
 
 data class World(val size: Int, val organisms: List<Organism>, val coordinateMap: Map<Coordinate, Organism>)
 
+// TODO: remove coordinate from organism
 data class Organism(val coordinate: Coordinate, val brain: Brain) {
     fun stateIntention(
         northBlocked: Boolean,
@@ -10,32 +12,33 @@ data class Organism(val coordinate: Coordinate, val brain: Brain) {
         westBlocked: Boolean,
         age: Int
     ): Behavior {
+        val matrixProduct: List<Float> = multiplyMatrix(
+            inputs = listOf(northBlocked.toFloat(), eastBlocked.toFloat(), southBlocked.toFloat(), westBlocked.toFloat(), age.toFloat(), 1F),
+            weights = brain.inputToHidden
+        ).map { (tanh(it/2) + 1)/ 2 }
+
+        val matrixProduct2: List<Float> = multiplyMatrix(
+            inputs = matrixProduct + 1F,
+            weights = brain.hiddenToOutput
+        ).map { (tanh(it/2) + 1)/ 2 }
 
 
-        val matrixProduct = multiplyMatrix(
-            inputs = listOf(northBlocked.toInt(), eastBlocked.toInt(), southBlocked.toInt(), westBlocked.toInt(), age, 1),
-            weights = brain.weights
-        )
-
-        val outputLayer = matrixProduct.map { (tanh(it/2) + 1)/ 2 }
-
-        val outputIndex = outputLayer.indexOf(outputLayer.max())
+        val outputIndex = matrixProduct2.indexOf(matrixProduct2.max())
 
         return Behavior.entries[outputIndex]
     }
 
-    private fun Boolean.toInt(): Int = if (this) 1 else 0
+    private fun Boolean.toFloat(): Float = if (this) 1F else 0F
 
-    private fun multiplyMatrix(inputs: List<Int>, weights: List<List<Float>>): List<Float> {
+    private fun multiplyMatrix(inputs: List<Float>, weights: List<List<Float>>): List<Float> {
         val matrixProduct: List<Float> = weights.map { row ->
+            assertEquals(row.size, inputs.size)
             row
                 .zip(inputs)
                 .map { it.first * it.second }
                 .reduce { acc, fl -> acc + fl }
 
         }
-
-//        println("matrixProduct size ${matrixProduct.size}")
 
         return matrixProduct
     }
@@ -51,4 +54,11 @@ enum class Behavior(val deltaX: Int, val deltaY: Int) {
 
 data class Coordinate(val x: Int, val y: Int)
 
-data class Brain(val id: Int, val weights: List<List<Float>>)
+data class Brain(
+    val id: Int,
+    val amountOfInputs: Int,
+    val amountOfHiddenNeurons: Int,
+    val amountOfOutputs: Int,
+    val inputToHidden: List<List<Float>>,
+    val hiddenToOutput: List<List<Float>>
+)

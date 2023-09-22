@@ -2,19 +2,19 @@ import Behavior.*
 import kotlin.random.Random
 
 fun main() {
-    val size = 300
+    val size = 200
+    val organisms = initializeOrganisms(size = size, numberOfSpecies = 5, numberOfOrganismsPerSpecies = 50)
     val world = World(
         size = size,
-        organisms = initializeOrganisms(size = size, numberOfSpecies = 5, numberOfOrganismsPerSpecies = 100),
-        HashMap()
+        organisms = organisms,
+        coordinateMap = organisms.associateBy { it.coordinate }
     )
-    val worldIterations: List <World> = runGeneration(maxAge = 100, world = world)
-    printWorld(world = worldIterations.first(), iteration = 0)
-    printWorld(world = worldIterations.last(), iteration = worldIterations.size)
+    val worldIterations: List<World> = runGeneration(maxAge = 1000, world = world)
+    worldIterations.forEachIndexed { index, it -> printWorld(it, index) }
 
 }
 
-fun runGeneration(maxAge: Int, world: World): List <World> = (0..maxAge)
+fun runGeneration(maxAge: Int, world: World): List<World> = (0..maxAge)
     .fold(listOf<World>(world)) { oldWorlds: List<World>, _: Int ->
         oldWorlds.last().let { lastWorld ->
             val worldBeforeLast = oldWorlds.getOrNull(oldWorlds.size - 2)
@@ -33,7 +33,7 @@ fun initializeOrganisms(size: Int, numberOfSpecies: Int, numberOfOrganismsPerSpe
                 .map { y -> Coordinate(x = x, y = y) }
         }
     val brains = (0..numberOfSpecies).flatMap {
-        val brain = getRandomBrain(5, 5, it)
+        val brain = getRandomBrain(it, 5, 10, 5)
         (0..numberOfOrganismsPerSpecies)
             .map { brain }
 
@@ -45,14 +45,31 @@ fun initializeOrganisms(size: Int, numberOfSpecies: Int, numberOfOrganismsPerSpe
         .map { Organism(coordinate = it.first, brain = it.second) }
 }
 
-fun getRandomBrain(inputAmount: Int, outputAmount: Int, id: Int): Brain {
-    val weights: List<List<Float>> = (0..<outputAmount).map {
+fun getRandomBrain(
+    id: Int,
+    amountOfInputs: Int,
+    amountOfHiddenNeurons: Int,
+    amountOfOutputs: Int
+): Brain {
+    val inputToHidden = initPathways(inputAmount = amountOfInputs, outputAmount = amountOfHiddenNeurons)
+    val hiddenToOutput = initPathways(inputAmount = amountOfHiddenNeurons, outputAmount = amountOfOutputs)
+
+    return Brain(
+        id = id,
+        inputToHidden = inputToHidden,
+        hiddenToOutput = hiddenToOutput,
+        amountOfInputs = amountOfInputs,
+        amountOfHiddenNeurons = amountOfHiddenNeurons,
+        amountOfOutputs = amountOfOutputs
+    )
+}
+
+fun initPathways(inputAmount: Int, outputAmount: Int): List<List<Float>> =
+    (0..<outputAmount).map {
         (0..inputAmount).map {
             Random.nextFloat() * 2 - 1
         }
     }
-    return Brain(weights = weights, id = id)
-}
 
 fun progressTime(world: World): World = (0..<world.organisms.size)
     .fold(world) { acc: World, i: Int -> progressOrganism(acc, world.organisms[i]) }
@@ -83,7 +100,7 @@ fun isWithinBoundaries(world: World, coordinate: Coordinate): Boolean {
 }
 
 fun isCoordinateAvailable(world: World, coordinate: Coordinate): Boolean {
-    return world.coordinateMap.containsKey(coordinate)
+    return !world.coordinateMap.containsKey(coordinate)
 }
 
 fun moveOrganism(world: World, organism: Organism, deltaX: Int, deltaY: Int): World {
