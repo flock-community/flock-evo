@@ -91,7 +91,7 @@ fun moveOrganism(world: World, organism: Organism, deltaX: Int, deltaY: Int): Wo
     return if (isWithinBoundaries(world, candidate) && isCoordinateAvailable(world, candidate)) {
         val newOrganism = organism.copy(coordinate = candidate)
         val organisms = world.organisms.map { if (organism == it) newOrganism else it }
-        val coordinateMap = (world.coordinateMap - organism.coordinate) + (candidate to organism)
+        val coordinateMap = (world.coordinateMap - organism.coordinate) + (candidate to newOrganism)
         world.copy(organisms = organisms, coordinateMap = coordinateMap)
     } else {
         world
