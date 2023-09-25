@@ -15,12 +15,12 @@ data class Organism(val coordinate: Coordinate, val brain: Brain) {
         val matrixProduct: List<Float> = multiplyMatrix(
             inputs = listOf(northBlocked.toFloat(), eastBlocked.toFloat(), southBlocked.toFloat(), westBlocked.toFloat(), age.toFloat(), 1F),
             weights = brain.inputToHidden
-        ).map { (tanh(it/2) + 1)/ 2 }
+        ).map { sigmoid(it) }
 
         val matrixProduct2: List<Float> = multiplyMatrix(
             inputs = matrixProduct + 1F,
             weights = brain.hiddenToOutput
-        ).map { (tanh(it/2) + 1)/ 2 }
+        ).map { sigmoid(it) }
 
 
         val outputIndex = matrixProduct2.indexOf(matrixProduct2.max())
@@ -28,8 +28,13 @@ data class Organism(val coordinate: Coordinate, val brain: Brain) {
         return Behavior.entries[outputIndex]
     }
 
+    private fun sigmoid(inputValue: Float): Float = (tanh(inputValue / 2) + 1) / 2
+
     private fun Boolean.toFloat(): Float = if (this) 1F else 0F
 
+    // This function does vector-matrix multiplication.
+    // The inputs dimensionality should be 1 x numberOfInputs and the weights dimensionality should be numberOfOutputs x numberOfInputs.
+    // Note that the function expects the transposed matrix: for the vector-matrix product v-A the function expects v and transpose(A).
     private fun multiplyMatrix(inputs: List<Float>, weights: List<List<Float>>): List<Float> {
         val matrixProduct: List<Float> = weights.map { row ->
             assertEquals(row.size, inputs.size)
