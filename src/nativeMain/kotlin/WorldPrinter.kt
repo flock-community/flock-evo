@@ -1,10 +1,10 @@
-fun printWorld(world: World, iteration: Int) {
+fun printWorld(world: World, generation: Int) {
     val rows: Int = world.size
     val xIndexes = (0..<rows)
-    println("remaining iterations: $iteration")
+    println("Generation: ${generation}. World age: ${world.age}")
     val rowPrints: List<String> = xIndexes.map { y ->
         xIndexes.joinToString(separator = "  ") { x ->
-            val entity: Organism? = world.organisms.find { it.coordinate.x == x && it.coordinate.y == y }
+            val entity: Organism? = world.coordinateMap[Coordinate(x = x, y = y)]
             val stringToPlot = entity.let { organism -> organism?.brain?.id?.toString()?.let{ "\u001b[31m$it\u001b[0m" }  } ?: "\u001b[36m_\u001b[0m"
             stringToPlot
         }

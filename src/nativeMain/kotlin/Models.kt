@@ -1,10 +1,9 @@
 import kotlin.math.tanh
 import kotlin.test.assertEquals
 
-data class World(val size: Int, val organisms: List<Organism>, val coordinateMap: Map<Coordinate, Organism>)
-
-// TODO: remove coordinate from organism
-data class Organism(val coordinate: Coordinate, val brain: Brain) {
+data class Generation(val index: Int, val worlds: List<World>)
+data class World(val size: Int, val coordinateMap: Map<Coordinate, Organism>, val age: Int)
+data class Organism(val brain: Brain) {
     fun stateIntention(
         northBlocked: Boolean,
         eastBlocked: Boolean,
