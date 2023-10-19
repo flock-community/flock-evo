@@ -10,6 +10,7 @@ export interface World {
 }
 
 export interface Organism {
+  backgroundColor: string;
   brain: Brain
 }
 
