@@ -1,0 +1,35 @@
+{
+  "name": "flock-evo",
+  "description": "Webcomponent flock-evo following open-wc recommendations",
+  "license": "MIT",
+  "author": "flock-evo",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/main/client/dist/src/index.js",
+  "module": "src/main/client/dist/src/index.js",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./flock-evo.js": "./dist/src/flock-evo.js"
+  },
+  "scripts": {
+    "analyze": "cem analyze --litelement",
+    "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"wds\"",
+    "build": "tsc && npm run analyze -- --exclude dist",
+    "prepublish": "tsc && npm run analyze -- --exclude dist",
+    "postinstall": "npm run generate",
+    "generate": "wirespec $(pwd)/src/main/models/ --language TypeScript --output $(pwd)/src/main/client/ --packageName generated",
+    "wirespec": "wirespec"
+  },
+  "dependencies": {
+    "lit": "2.8.0"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.4.17",
+    "@web/dev-server": "^0.1.34",
+    "concurrently": "^5.3.0",
+    "@flock/wirespec": "0.6.3",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.2"
+  },
+  "customElements": "custom-elements.json"
+}
