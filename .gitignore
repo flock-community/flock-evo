@@ -18,6 +18,7 @@
 # build
 /_site/
 /dist/
+/target/
 /src/main/client/generated/
 /out-tsc/
 
