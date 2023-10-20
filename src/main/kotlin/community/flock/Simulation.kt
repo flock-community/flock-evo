@@ -28,6 +28,8 @@ fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): Flow<Generat
   val initialGeneration = runGeneration(maxAge = 100, world = initialWorld, generationIndex = 0)
   emit(initialGeneration)
 
+
+  //Todo convert to Flow
   val generations = (1..numberOfGenerations).fold(
     initial = listOf(initialGeneration)
   ) { generationAccumulator: List<GenerationK>, generationIndex: Int ->
@@ -72,7 +74,7 @@ fun getWorldForNextGeneration(lastWorld: WorldK): WorldK {
 }
 
 fun getSurvivors(world: WorldK): List<OrganismK> =
-  world.coordinateMap.filter { it.key.x < world.size / 2 }.values.toList()
+  world.coordinateMap.filter { it.key.x > world.size / 2 }.values.toList()
 
 fun reproduce(organisms: List<OrganismK>): List<OrganismK> =
   organisms.flatMap { listOf(createOffspring(it), createOffspring(it)) }
@@ -87,8 +89,7 @@ fun mutate(brain: BrainK): BrainK {
 
   return brain.copy(
     inputToHidden = mutatedInputToHidden,
-    hiddenToOutput = mutatedHiddenToOutput,
-    char = brain.char + 100
+    hiddenToOutput = mutatedHiddenToOutput
   )
 }
 
@@ -111,7 +112,7 @@ private fun mutateOneWeight(weights: List<List<Float>>): List<List<Float>> {
 fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<OrganismK> =
   (0..<numberOfSpecies).flatMap {
     val speciesId = UUID.randomUUID().toString();
-    val brain = getRandomBrain(it, 5, 10, 5)
+    val brain = getRandomBrain(5, 10, 5)
     (0..<numberOfOrganismsPerSpecies)
       .map {
       val organismsId = UUID.randomUUID().toString()
@@ -133,7 +134,6 @@ fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>): Map<CoordinateK,
 }
 
 fun getRandomBrain(
-  id: Int,
   amountOfInputs: Int,
   amountOfHiddenNeurons: Int,
   amountOfOutputs: Int
@@ -142,7 +142,6 @@ fun getRandomBrain(
   val hiddenToOutput = initPathways(inputAmount = amountOfHiddenNeurons, outputAmount = amountOfOutputs)
 
   return BrainK(
-    char = Char(code = id + 96),
     inputToHidden = inputToHidden,
     hiddenToOutput = hiddenToOutput,
     amountOfInputs = amountOfInputs,

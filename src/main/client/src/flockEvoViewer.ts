@@ -1,4 +1,4 @@
-import {css, html, LitElement} from 'lit';
+import {css, html, LitElement, nothing} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
 import {Generation} from "../../../../generated/client/models/Models";
 import {GenerationView, internalizeGeneration} from "./models/models";
@@ -35,8 +35,8 @@ export class FlockEvoViewer extends LitElement {
 
 
   render() {
-      return html`
-          <flock-evo-player .generations="${this.generations}"></flock-evo-player>
-      `
+    return this.generations.length > 0 ? html`
+      <flock-evo-player .generations="${this.generations}"></flock-evo-player>
+    ` : nothing
   }
 }

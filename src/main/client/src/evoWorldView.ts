@@ -58,7 +58,6 @@ grid-template-columns: repeat(${this.world.size}, ${this.calculateWidth(this.wor
           style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
           grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};
           background-color: ${this.getBackgroundColor(entity.organism.speciesId)}" class="organism">
-          X
         </div>` : nothing)}
     </div>
   ` : nothing

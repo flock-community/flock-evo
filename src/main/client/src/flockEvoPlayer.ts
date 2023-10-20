@@ -1,7 +1,6 @@
 import {customElement, state, property} from "lit/decorators.js";
 import {css, html, LitElement, nothing} from "lit";
 import {GenerationView, WorldView} from "./models/models";
-import {repeat} from "lit/directives/repeat";
 
 
 @customElement('flock-evo-player')
@@ -32,7 +31,15 @@ export class FlockEvoPlayer extends LitElement {
   private generations: GenerationView[] | undefined
 
   private currentGenerationAge = 0;
-  private currentIndexOfWorldInGeneration = 0;
+
+  connectedCallback() {
+    super.connectedCallback();
+    console.log(this.generations);
+    if (this.generations && this.generations.length > 0) {
+      this.currentGeneration = this.generations[0]
+      this.currentWorld = this.currentGeneration.worlds[0]
+    }
+  }
 
   private decreaseWorldAge() {
     if (this.currentWorld && this.currentGeneration?.worlds[this.currentGenerationAge - 1]) {
@@ -58,20 +65,20 @@ export class FlockEvoPlayer extends LitElement {
 
   render() {
     return this.generations ? html`
-        <div class="evo-player__container">
-          <div class="evo-player__player">
-            Current age: ${this.currentWorld?.age}
-          </div>
-          <button @click="${this.increaseWorldAge}">+1</button>
-          <button @click="${this.decreaseWorldAge}">-1</button>
-          <select @input=${this.selectGeneration}>
-            ${this.generations.map((_, index) => html `
-              <option value=${index}>${index}</option>
-            `)}
-          </select>
-          <flock-evo-world .world="${this.currentWorld}" class="evo-player__world"></flock-evo-world>
+      <div class="evo-player__container">
+        <div class="evo-player__player">
+          Current age: ${this.currentWorld?.age}
         </div>
-      ` : nothing
+        <button @click="${this.increaseWorldAge}">+1</button>
+        <button @click="${this.decreaseWorldAge}">-1</button>
+        <select @input=${this.selectGeneration}>
+          ${this.generations.map((_, index) => html`
+            <option value=${index}>${index}</option>
+          `)}
+        </select>
+        <flock-evo-world .world="${this.currentWorld}" class="evo-player__world"></flock-evo-world>
+      </div>
+    ` : nothing
   }
 
 

@@ -27,7 +27,6 @@ fun GenerationK.externalize(): Generation {
 
 fun BrainK.externalize(): Brain {
   return Brain(
-    char = char.toString(),
     amountOfInputs = amountOfInputs,
     amountOfHiddenNeurons = amountOfHiddenNeurons,
     amountOfOutputs = amountOfOutputs
@@ -35,7 +34,6 @@ fun BrainK.externalize(): Brain {
 }
 
 data class BrainK(
-  val char: Char,
   val amountOfInputs: Int,
   val amountOfHiddenNeurons: Int,
   val amountOfOutputs: Int,
