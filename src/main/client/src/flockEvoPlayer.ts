@@ -31,10 +31,13 @@ export class FlockEvoPlayer extends LitElement {
   private generations: GenerationView[] | undefined
 
   private currentGenerationAge = 0;
+  private currentGenerationIndex = 0;
+
+  @state()
   private playerStarted: boolean = false;
 
-  @property()
-  private delayTimer: number = 500;
+  @state()
+  private delayTimer: number = 1;
 
   startPlayer() {
     if (this.playerStarted) {
@@ -78,9 +81,21 @@ export class FlockEvoPlayer extends LitElement {
     if (!this.playerStarted) {
       return;
     }
-    if (this.currentWorld && this.currentGeneration?.worlds[this.currentGenerationAge + 1]) {
-      this.currentWorld = this.currentGeneration?.worlds[this.currentGenerationAge + 1];
-      this.currentGenerationAge = this.currentGenerationAge + 1;
+    if (this.currentWorld) {
+      if (this.currentGeneration?.worlds[this.currentGenerationAge + 1]) {
+        this.currentWorld = this.currentGeneration?.worlds[this.currentGenerationAge + 1];
+        this.currentGenerationAge = this.currentGenerationAge + 1;
+      } else {
+        if (this.generations && this.generations[this.currentGenerationIndex + 1]) {
+          this.currentGeneration = this.generations[this.currentGenerationIndex + 1];
+          if (this.currentGeneration) {
+            this.currentWorld = this.currentGeneration.worlds[0];
+            this.currentGenerationAge = 0;
+            this.currentGenerationIndex = this.currentGenerationIndex + 1;
+          }
+        }
+      }
+
     }
   }
 
@@ -89,6 +104,7 @@ export class FlockEvoPlayer extends LitElement {
       this.currentGeneration = this.generations[index.target.value];
       this.currentWorld = this.currentGeneration.worlds[0];
       this.currentGenerationAge = 0;
+      this.currentGenerationIndex = index.target.value;
     }
   }
 
@@ -107,7 +123,7 @@ export class FlockEvoPlayer extends LitElement {
             <button @click="${this.decreaseWorldAge}">-1</button>
             ${!this.playerStarted ? html`<button @click="${this.startPlayer}">Start autoplay</button>` : nothing}
             ${this.playerStarted ? html`<button @click="${this.stopPlayer}">Stop autoplay</button>` : nothing}
-            <input type="number" step=100 min="100" value=500 @input=${this.changeDelayTimer}>
+            <input type="number" step=100 min="1" value=1 @input=${this.changeDelayTimer}>
             <select @input=${this.selectGeneration}>
                 ${this.generations.map((_, index) => html`
                     <option value=${index}>${index}</option>
