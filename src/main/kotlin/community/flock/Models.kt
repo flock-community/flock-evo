@@ -4,7 +4,7 @@ data class GenerationK(val index: Int, val worlds: List<WorldK>)
 
 data class WorldK(val size: Int, val coordinateMap: Map<CoordinateK, OrganismK>, val age: Int)
 
-data class OrganismK(val brain: BrainK)
+data class OrganismK(val brain: BrainK, val id: String, val speciesId: String)
 
 data class CoordinateK(val x: Int, val y: Int)
 
@@ -14,7 +14,7 @@ fun GenerationK.externalize(): Generation {
     val entities: List<WorldEntity> = world.coordinateMap.map { (coordinate, organism) ->
       WorldEntity(
         coordinate = Coordinate(coordinate.x, coordinate.y),
-        organism = Organism(brain = organism.brain.externalize())
+        organism = Organism(id = organism.id, speciesId = organism.speciesId, brain = organism.brain.externalize())
       )
     }
 
