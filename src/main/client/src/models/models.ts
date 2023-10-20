@@ -21,8 +21,7 @@ export interface GenerationView {
 
 export interface WorldView {
   size: number,
-  entities: EntityView[],
-  age: number
+  entities: EntityView[]
 }
 
 export interface EntityView {
@@ -37,9 +36,9 @@ export const internalizeGeneration = (generation: Generation): GenerationView =>
 }
 
 export const internalizeWorld = (world: World): WorldView => {
-  const {size, entities, age} = world;
+  const {size, entities} = world;
   const entityViews = entities.map(e => internalizeEntity(e))
-  return {size, entities: entityViews, age}
+  return {size, entities: entityViews}
 }
 
 export const internalizeEntity = (entity: WorldEntity): EntityView => {

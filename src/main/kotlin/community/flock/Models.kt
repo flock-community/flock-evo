@@ -18,7 +18,7 @@ fun GenerationK.externalize(): Generation {
       )
     }
 
-    World(size = world.size, entities = entities, age = world.age)
+    World(size = world.size, entities = entities)
 
   }
 

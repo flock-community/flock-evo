@@ -5,8 +5,7 @@ type Generation {
 
 type World {
     size: Integer,
-    entities: WorldEntity[],
-    age: Integer
+    entities: WorldEntity[]
 }
 
 type WorldEntity {

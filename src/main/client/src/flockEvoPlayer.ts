@@ -117,7 +117,7 @@ export class FlockEvoPlayer extends LitElement {
     return this.generations ? html`
         <div class="evo-player__container">
             <div class="evo-player__player">
-                Current age: ${this.currentWorld?.age}
+                Current age: ${this.currentGenerationAge}
             </div>
             <div>
                 Current generation: ${this.currentGenerationIndex}

@@ -8,10 +8,11 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 
 fun startSimulation(): Flow<GenerationK> {
-  val size = 200
+  val size = 50
+  val maxWorldAge = 100
   val organisms = initializeOrganisms(
-    numberOfSpecies = 20,
-    numberOfOrganismsPerSpecies = 30
+    numberOfSpecies = 100,
+    numberOfOrganismsPerSpecies = 2
   )
 
   val coordinateMap = spawnOrganisms(worldSize = size, organisms = organisms)
@@ -21,11 +22,15 @@ fun startSimulation(): Flow<GenerationK> {
     age = 0
   )
 
-  return runGenerations(100, initialWorld)
+  return runGenerations(
+    numberOfGenerations = 500,
+    initialWorld = initialWorld,
+    maxAge = maxWorldAge
+  )
 }
 
-fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): Flow<GenerationK> = flow {
-  val initialGeneration = runGeneration(maxAge = 250, world = initialWorld, generationIndex = 0)
+fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK, maxAge: Int): Flow<GenerationK> = flow {
+  val initialGeneration = runGeneration(maxAge = maxAge, world = initialWorld, generationIndex = 0)
   emit(initialGeneration)
 
 
@@ -38,7 +43,7 @@ fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): Flow<Generat
     val offspring = getWorldForNextGeneration(lastWorld)
     val newGeneration =
       runGeneration(
-        maxAge = 100,
+        maxAge = maxAge,
         world = offspring,
         generationIndex = generationIndex
       )
@@ -74,7 +79,7 @@ fun getWorldForNextGeneration(lastWorld: WorldK): WorldK {
 }
 
 fun getSurvivors(world: WorldK): List<OrganismK> =
-  world.coordinateMap.filter { it.key.x > world.size / 2 }.values.toList()
+  world.coordinateMap.filter { it.key.x in 1..48 && it.key.y in 1..48 }.values.toList()
 
 fun reproduce(organisms: List<OrganismK>): List<OrganismK> =
   organisms.flatMap { listOf(createOffspring(it), createOffspring(it)) }
@@ -115,7 +120,7 @@ fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int):
     val brain = getRandomBrain(5, 10, 5)
     (0..<numberOfOrganismsPerSpecies)
       .map {
-      val organismsId = UUID.randomUUID().toString()
+        val organismsId = UUID.randomUUID().toString()
         OrganismK(brain = brain, id = organismsId, speciesId = speciesId)
       }
   }
