@@ -1,3 +1,3 @@
-export { Generations } from '././generations.js';
+export { FlockEvoViewer } from './flockEvoViewer';
 export { Generation } from './models.js';
-export { WorldView } from './worldView.js';
+export { EvoWorldView } from './evoWorldView';
