@@ -14,8 +14,8 @@ import java.time.Duration
 
 fun Application.configureSockets() {
   install(WebSockets) {
-    pingPeriod = Duration.ofSeconds(15)
-    timeout = Duration.ofSeconds(15)
+    pingPeriod = Duration.ofSeconds(60)
+    timeout = Duration.ofSeconds(60)
     maxFrameSize = Long.MAX_VALUE
     masking = false
     //Kotlin serializationx lib requires annotations, Jackson doesnt

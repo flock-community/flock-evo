@@ -8,10 +8,10 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 
 fun startSimulation(): Flow<GenerationK> {
-  val size = 20
+  val size = 200
   val organisms = initializeOrganisms(
-    numberOfSpecies = 5,
-    numberOfOrganismsPerSpecies = 5
+    numberOfSpecies = 20,
+    numberOfOrganismsPerSpecies = 30
   )
 
   val coordinateMap = spawnOrganisms(worldSize = size, organisms = organisms)
@@ -25,7 +25,7 @@ fun startSimulation(): Flow<GenerationK> {
 }
 
 fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): Flow<GenerationK> = flow {
-  val initialGeneration = runGeneration(maxAge = 100, world = initialWorld, generationIndex = 0)
+  val initialGeneration = runGeneration(maxAge = 250, world = initialWorld, generationIndex = 0)
   emit(initialGeneration)
 
 

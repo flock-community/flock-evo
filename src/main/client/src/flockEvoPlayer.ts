@@ -119,10 +119,15 @@ export class FlockEvoPlayer extends LitElement {
             <div class="evo-player__player">
                 Current age: ${this.currentWorld?.age}
             </div>
+            <div>
+                Current generation: ${this.currentGenerationIndex}
+            </div>
             <button @click="${this.increaseWorldAge}">+1</button>
             <button @click="${this.decreaseWorldAge}">-1</button>
-            ${!this.playerStarted ? html`<button @click="${this.startPlayer}">Start autoplay</button>` : nothing}
-            ${this.playerStarted ? html`<button @click="${this.stopPlayer}">Stop autoplay</button>` : nothing}
+            ${!this.playerStarted ? html`
+                <button @click="${this.startPlayer}">Start autoplay</button>` : nothing}
+            ${this.playerStarted ? html`
+                <button @click="${this.stopPlayer}">Stop autoplay</button>` : nothing}
             <input type="number" step=100 min="1" value=1 @input=${this.changeDelayTimer}>
             <select @input=${this.selectGeneration}>
                 ${this.generations.map((_, index) => html`
