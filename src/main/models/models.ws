@@ -15,6 +15,8 @@ type WorldEntity {
 }
 
 type Organism {
+  id: String,
+  speciesId: String,
   brain: Brain
 }
 
