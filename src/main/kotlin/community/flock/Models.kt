@@ -1,31 +1,52 @@
-import kotlinx.serialization.Serializable
+package community.flock
 
-@Serializable
-data class Generation(val index: Int, val worlds: List<World>)
+data class GenerationK(val index: Int, val worlds: List<WorldK>)
 
-@Serializable
-data class World(val size: Int, val coordinateMap: Map<Coordinate, Organism>, val age: Int)
+data class WorldK(val size: Int, val coordinateMap: Map<CoordinateK, OrganismK>, val age: Int)
 
-@Serializable
-data class Organism(val brain: Brain)
+data class OrganismK(val brain: BrainK)
 
-@Serializable
-data class Coordinate(val x: Int, val y: Int)
+data class CoordinateK(val x: Int, val y: Int)
 
-@Serializable
-data class Brain(
-    val char: Char,
-    val amountOfInputs: Int,
-    val amountOfHiddenNeurons: Int,
-    val amountOfOutputs: Int,
-    val inputToHidden: List<List<Float>>,
-    val hiddenToOutput: List<List<Float>>
+fun GenerationK.externalize(): Generation {
+  val worlds: List<World> = this.worlds.map { world ->
+
+    val entities: List<WorldEntity> = world.coordinateMap.map { (coordinate, organism) ->
+      WorldEntity(
+        coordinate = Coordinate(coordinate.x, coordinate.y),
+        organism = Organism(brain = organism.brain.externalize())
+      )
+    }
+
+    World(size = world.size, entities = entities, age = world.age)
+
+  }
+
+  return Generation(index, worlds = worlds)
+}
+
+fun BrainK.externalize(): Brain {
+  return Brain(
+    char = char.toString(),
+    amountOfInputs = amountOfInputs,
+    amountOfHiddenNeurons = amountOfHiddenNeurons,
+    amountOfOutputs = amountOfOutputs
+  )
+}
+
+data class BrainK(
+  val char: Char,
+  val amountOfInputs: Int,
+  val amountOfHiddenNeurons: Int,
+  val amountOfOutputs: Int,
+  val inputToHidden: List<List<Float>>,
+  val hiddenToOutput: List<List<Float>>
 )
 
 enum class Behavior(val deltaX: Int, val deltaY: Int) {
-    DO_NOTHING(0, 0),
-    GO_NORTH(0, 1),
-    GO_EAST(1, 0),
-    GO_SOUTH(0, -1),
-    GO_WEST(-1, 0),
+  DO_NOTHING(0, 0),
+  GO_NORTH(0, 1),
+  GO_EAST(1, 0),
+  GO_SOUTH(0, -1),
+  GO_WEST(-1, 0),
 }

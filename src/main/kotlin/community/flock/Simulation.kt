@@ -1,16 +1,10 @@
 package community.flock
 
-import Behavior
-import Brain
-import Coordinate
-import Generation
-import Organism
-import World
 import kotlin.math.tanh
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
-fun startSimulation(): List<Generation> {
+fun startSimulation(): List<GenerationK> {
     val size = 20
     val organisms = initializeOrganisms(
         numberOfSpecies = 5,
@@ -18,7 +12,7 @@ fun startSimulation(): List<Generation> {
     )
 
     val coordinateMap = spawnOrganisms(worldSize = size, organisms = organisms)
-    val initialWorld = World(
+    val initialWorld = WorldK(
         size = size,
         coordinateMap = coordinateMap,
         age = 0
@@ -27,12 +21,12 @@ fun startSimulation(): List<Generation> {
     return runGenerations(100, initialWorld)
 }
 
-fun runGenerations(numberOfGenerations: Int, initialWorld: World): List<Generation> {
+fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): List<GenerationK> {
     val initialGeneration = runGeneration(maxAge = 100, world = initialWorld, generationIndex = 0)
 
     val generations = (1..numberOfGenerations).fold(
         initial = listOf(initialGeneration)
-    ) { generationAccumulator: List<Generation>, generationIndex: Int ->
+    ) { generationAccumulator: List<GenerationK>, generationIndex: Int ->
         val lastGeneration = generationAccumulator.last()
         val lastWorld = lastGeneration.worlds.last()
         val offspring = getWorldForNextGeneration(lastWorld)
@@ -49,9 +43,9 @@ fun runGenerations(numberOfGenerations: Int, initialWorld: World): List<Generati
     return generations
 }
 
-fun runGeneration(world: World, maxAge: Int, generationIndex: Int): Generation {
+fun runGeneration(world: WorldK, maxAge: Int, generationIndex: Int): GenerationK {
     val worlds = (0..<maxAge)
-        .fold(initial = listOf(world)) { oldWorlds: List<World>, age: Int ->
+        .fold(initial = listOf(world)) { oldWorlds: List<WorldK>, age: Int ->
             oldWorlds.last().let { lastWorld ->
                 val worldBeforeLast = oldWorlds.getOrNull(oldWorlds.size - 2)
                 worldBeforeLast?.let {
@@ -61,10 +55,10 @@ fun runGeneration(world: World, maxAge: Int, generationIndex: Int): Generation {
                 } ?: (oldWorlds + progressTime(lastWorld, age))
             }
         }
-    return Generation(index = generationIndex, worlds = worlds)
+    return GenerationK(index = generationIndex, worlds = worlds)
 }
 
-fun getWorldForNextGeneration(lastWorld: World): World {
+fun getWorldForNextGeneration(lastWorld: WorldK): WorldK {
     val survivors = getSurvivors(world = lastWorld)
     val offspring = reproduce(survivors)
         .shuffled()
@@ -75,17 +69,17 @@ fun getWorldForNextGeneration(lastWorld: World): World {
     return lastWorld.copy(age = lastWorld.age + 1, coordinateMap = coordinateMap)
 }
 
-fun getSurvivors(world: World): List<Organism> =
+fun getSurvivors(world: WorldK): List<OrganismK> =
     world.coordinateMap.filter { it.key.x < world.size / 2 }.values.toList()
 
-fun reproduce(organisms: List<Organism>): List<Organism> =
+fun reproduce(organisms: List<OrganismK>): List<OrganismK> =
     organisms.flatMap { listOf(createOffspring(it), createOffspring(it)) }
 
-private fun createOffspring(organism: Organism): Organism = if (Random.nextFloat() < 0.04) {
+private fun createOffspring(organism: OrganismK): OrganismK = if (Random.nextFloat() < 0.04) {
     organism.copy(brain = mutate(organism.brain))
 } else organism
 
-fun mutate(brain: Brain): Brain {
+fun mutate(brain: BrainK): BrainK {
     val mutatedInputToHidden = mutateOneWeight(brain.inputToHidden)
     val mutatedHiddenToOutput = mutateOneWeight(brain.hiddenToOutput)
 
@@ -112,7 +106,7 @@ private fun mutateOneWeight(weights: List<List<Float>>): List<List<Float>> {
     }
 }
 
-fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<Organism> {
+fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<OrganismK> {
     val brains = (0..<numberOfSpecies).flatMap {
         val brain = getRandomBrain(it, 5, 10, 5)
         (0..<numberOfOrganismsPerSpecies)
@@ -120,20 +114,20 @@ fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int):
 
     }
 
-    return brains.map { Organism(brain = it) }
+    return brains.map { OrganismK(brain = it) }
 }
 
-fun spawnOrganisms(worldSize: Int, organisms: List<Organism>): Map<Coordinate, Organism> {
-    val possibleCoordinates: List<Coordinate> = (0..<worldSize)
+fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>): Map<CoordinateK, OrganismK> {
+    val possibleCoordinates: List<CoordinateK> = (0..<worldSize)
         .flatMap { x ->
             (0..<worldSize)
-                .map { y -> Coordinate(x = x, y = y) }
+                .map { y -> CoordinateK(x = x, y = y) }
         }
 
     return possibleCoordinates
         .shuffled()
         .zip(organisms)
-        .associate { (first, second): Pair<Coordinate, Organism> -> first to second }
+        .associate { (first, second): Pair<CoordinateK, OrganismK> -> first to second }
 }
 
 fun getRandomBrain(
@@ -141,11 +135,11 @@ fun getRandomBrain(
     amountOfInputs: Int,
     amountOfHiddenNeurons: Int,
     amountOfOutputs: Int
-): Brain {
+): BrainK {
     val inputToHidden = initPathways(inputAmount = amountOfInputs, outputAmount = amountOfHiddenNeurons)
     val hiddenToOutput = initPathways(inputAmount = amountOfHiddenNeurons, outputAmount = amountOfOutputs)
 
-    return Brain(
+    return BrainK(
         char = Char(code = id + 96),
         inputToHidden = inputToHidden,
         hiddenToOutput = hiddenToOutput,
@@ -162,8 +156,8 @@ fun initPathways(inputAmount: Int, outputAmount: Int): List<List<Float>> =
         }
     }
 
-fun progressTime(world: World, currentAge: Int): World = (world.coordinateMap.entries)
-    .fold(initial = world) { acc: World, entry: Map.Entry<Coordinate, Organism> ->
+fun progressTime(world: WorldK, currentAge: Int): WorldK = (world.coordinateMap.entries)
+    .fold(initial = world) { acc: WorldK, entry: Map.Entry<CoordinateK, OrganismK> ->
         progressOrganism(
             world = acc,
             organism = entry.value,
@@ -171,7 +165,7 @@ fun progressTime(world: World, currentAge: Int): World = (world.coordinateMap.en
         ).copy(age = currentAge + 1)
     }
 
-fun progressOrganism(world: World, organism: Organism, coordinate: Coordinate): World {
+fun progressOrganism(world: WorldK, organism: OrganismK, coordinate: CoordinateK): WorldK {
     return when (val behaviour = stateIntention(
         brain = organism.brain,
         northBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = 1),
@@ -188,23 +182,23 @@ fun progressOrganism(world: World, organism: Organism, coordinate: Coordinate): 
     }
 }
 
-fun isTileBlocked(world: World, coordinate: Coordinate, deltaX: Int, deltaY: Int): Boolean {
-    val newCoordinate = Coordinate(coordinate.x + deltaX, coordinate.y + deltaY)
+fun isTileBlocked(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: Int): Boolean {
+    val newCoordinate = CoordinateK(coordinate.x + deltaX, coordinate.y + deltaY)
     return isWithinBoundaries(world, newCoordinate) && isCoordinateAvailable(world, newCoordinate)
 }
 
-fun isWithinBoundaries(world: World, coordinate: Coordinate): Boolean {
+fun isWithinBoundaries(world: WorldK, coordinate: CoordinateK): Boolean {
     return coordinate.x >= 0 && coordinate.x < world.size && coordinate.y >= 0 && coordinate.y < world.size
 }
 
-fun isCoordinateAvailable(world: World, coordinate: Coordinate): Boolean {
+fun isCoordinateAvailable(world: WorldK, coordinate: CoordinateK): Boolean {
     return !world.coordinateMap.containsKey(coordinate)
 }
 
-fun moveOrganism(world: World, coordinate: Coordinate, deltaX: Int, deltaY: Int): World {
-    val candidate = Coordinate(x = coordinate.x + deltaX, y = coordinate.y + deltaY)
+fun moveOrganism(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: Int): WorldK {
+    val candidate = CoordinateK(x = coordinate.x + deltaX, y = coordinate.y + deltaY)
     return if (isWithinBoundaries(world, candidate) && isCoordinateAvailable(world, candidate)) {
-        val updatedCoordinateMap: Map<Coordinate, Organism> = world.coordinateMap
+        val updatedCoordinateMap: Map<CoordinateK, OrganismK> = world.coordinateMap
             .mapKeys { if (coordinate == it.key) candidate else it.key }
         world.copy(coordinateMap = updatedCoordinateMap)
     } else {
@@ -234,12 +228,12 @@ private fun multiplyMatrix(inputs: List<Float>, weights: List<List<Float>>): Lis
 }
 
 fun stateIntention(
-    brain: Brain,
-    northBlocked: Boolean,
-    eastBlocked: Boolean,
-    southBlocked: Boolean,
-    westBlocked: Boolean,
-    age: Int
+  brain: BrainK,
+  northBlocked: Boolean,
+  eastBlocked: Boolean,
+  southBlocked: Boolean,
+  westBlocked: Boolean,
+  age: Int
 ): Behavior {
     val matrixProduct: List<Float> = multiplyMatrix(
         inputs = listOf(northBlocked.toFloat(), eastBlocked.toFloat(), southBlocked.toFloat(), westBlocked.toFloat(), age.toFloat(), 1F),

@@ -21,6 +21,7 @@
 /target/
 /src/main/client/generated/
 /out-tsc/
+/generated/
 
 storybook-static
 custom-elements.json

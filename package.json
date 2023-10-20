@@ -17,8 +17,8 @@
     "build": "tsc && npm run analyze -- --exclude dist",
     "prepublish": "tsc && npm run analyze -- --exclude dist",
     "postinstall": "npm run generate && npm run generate-kotlin",
-    "generate": "wirespec $(pwd)/src/main/models/ --language TypeScript --output $(pwd)/src/main/client/ --packageName generated",
-    "generate-kotlin": "wirespec $(pwd)/src/main/models/ --language Kotlin --output $(pwd)/target --packageName generated-sources/kotlin"
+    "generate": "wirespec $(pwd)/src/main/models/ --language TypeScript --output $(pwd)/generated/client/ --packageName models",
+    "generate-kotlin": "wirespec $(pwd)/src/main/models/ --language Kotlin --output $(pwd)/target/generated-sources/kotlin --packageName community.flock"
   },
   "dependencies": {
     "lit": "2.8.0"
