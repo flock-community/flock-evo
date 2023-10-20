@@ -21,7 +21,6 @@ type Organism {
 }
 
 type Brain {
-  char: String,
   amountOfInputs: Integer,
   amountOfHiddenNeurons: Integer,
   amountOfOutputs: Integer
