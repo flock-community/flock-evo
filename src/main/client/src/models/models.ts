@@ -8,6 +8,8 @@ import {
 } from "../../../../../generated/client/models/Models";
 
 export interface OrganismView {
+  id: string;
+  speciesId: string;
   brain: Brain;
   backgroundColor: string;
 }
@@ -47,7 +49,7 @@ export const internalizeEntity = (entity: WorldEntity): EntityView => {
 }
 
 export const internalizeOrganism = (organism: Organism): OrganismView => {
-  const {brain} = organism;
-  const backgroundColor = 'hsla(' + (Math.random() * 360) + ', 100%, 75%, 0.5)'
-  return {brain, backgroundColor};
+  const {brain, id, speciesId} = organism;
+  const backgroundColor = '';
+  return {brain, backgroundColor, id, speciesId};
 }

@@ -2,6 +2,7 @@ import {css, html, LitElement, nothing} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import {EntityView, WorldView} from "./models/models";
 import {repeat} from "lit/directives/repeat.js";
+import {ColorService} from "./colorService";
 
 @customElement('flock-evo-world')
 export class EvoWorldView extends LitElement {
@@ -44,15 +45,19 @@ export class EvoWorldView extends LitElement {
     return 90 / worldSize
   }
 
+  getBackgroundColor(speciesId: string) {
+    return ColorService.getColorById(speciesId);
+  }
+
   render = () => this.world ? html`
     <div class="world-grid"
          style="grid-template-rows: repeat(${this.world.size}, ${this.calculateHeight(this.world.size)}vh);
 grid-template-columns: repeat(${this.world.size}, ${this.calculateWidth(this.world.size)}vw)">
       ${repeat(this.world.entities, (entity: EntityView) => this.world ? html`
         <div
-          style="grid-row: ${this.world.size - entity.coordinate.y + 1}/${this.world.size - entity.coordinate.y + 2};
+          style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
           grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};
-          background-color: ${entity.organism.backgroundColor}" class="organism">
+          background-color: ${this.getBackgroundColor(entity.organism.speciesId)}" class="organism">
           X
         </div>` : nothing)}
     </div>
