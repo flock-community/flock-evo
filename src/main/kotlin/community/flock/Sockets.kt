@@ -6,6 +6,10 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import java.time.Duration
 
 fun Application.configureSockets() {
@@ -19,12 +23,12 @@ fun Application.configureSockets() {
   }
   routing {
     webSocket("/ws") { //
-      val generations: List<GenerationK> = startSimulation()
-      generations.forEach {
-        delay(1000)
-        sendSerialized(it.externalize())
-      }
-      close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
+      startSimulation()
+        .cancellable()
+        .onEach { sendSerialized(it.externalize()) }
+        .onCompletion { close(CloseReason(CloseReason.Codes.NORMAL, "Simulation done")) }
+        .collect()
     }
+
   }
 }

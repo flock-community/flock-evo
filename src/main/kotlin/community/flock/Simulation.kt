@@ -1,10 +1,12 @@
 package community.flock
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlin.math.tanh
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
-fun startSimulation(): List<GenerationK> {
+fun startSimulation(): Flow<GenerationK> {
     val size = 20
     val organisms = initializeOrganisms(
         numberOfSpecies = 5,
@@ -21,8 +23,9 @@ fun startSimulation(): List<GenerationK> {
     return runGenerations(100, initialWorld)
 }
 
-fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): List<GenerationK> {
+fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): Flow<GenerationK> = flow {
     val initialGeneration = runGeneration(maxAge = 100, world = initialWorld, generationIndex = 0)
+    emit(initialGeneration)
 
     val generations = (1..numberOfGenerations).fold(
         initial = listOf(initialGeneration)
@@ -36,11 +39,9 @@ fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK): List<Generat
                 world = offspring,
                 generationIndex = generationIndex
             )
-
+        emit(newGeneration)
         generationAccumulator + newGeneration
     }
-
-    return generations
 }
 
 fun runGeneration(world: WorldK, maxAge: Int, generationIndex: Int): GenerationK {

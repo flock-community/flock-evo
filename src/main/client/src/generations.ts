@@ -1,6 +1,6 @@
 import { html, css, LitElement } from 'lit';
 import {customElement, state} from 'lit/decorators.js';
-import {Coordinate, Generation, Organism} from "../generated/Models";
+import {Coordinate, Generation, Organism} from "../../../../generated/client/models/Models";
 
 @customElement('flock-evo-generations')
 export class Generations extends LitElement {
@@ -27,17 +27,11 @@ export class Generations extends LitElement {
     this.websocket.onmessage = (event) => {
       //TODO make runtime safe
       const generation : Generation = JSON.parse(event.data) as unknown as Generation
-      generation.worlds.forEach(world => {
-        const coordinateMap = new Map<Coordinate, Organism>;
-        // @ts-ignore
-        for (let i = 0; i < world.coordinateMap.length;) {
-          // @ts-ignore
-          coordinateMap.set(world.coordinateMap[i++], world.coordinateMap[i++])
-        }
-        // world.coordinateMap = coordinateMap;
-        // Array.from(world.coordinateMap.values()).forEach(organism => this.generateRandomLightColor(organism));
-      });
-      this.generations = [generation]
+      console.log(generation);
+    }
+
+    this.websocket.onclose = (event) => {
+      console.log(event);
     }
   }
 

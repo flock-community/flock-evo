@@ -1,7 +1,8 @@
 import {css, html, LitElement, nothing} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import {repeat} from "lit/directives/repeat.js";
-import {World} from "../generated/Models";
+import {World} from "../../../../generated/client/models/Models";
+
+
 
 @customElement('flock-evo-world')
 export class WorldView extends LitElement {

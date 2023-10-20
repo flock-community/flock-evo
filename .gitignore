@@ -19,7 +19,6 @@
 /_site/
 /dist/
 /target/
-/src/main/client/generated/
 /out-tsc/
 /generated/
 

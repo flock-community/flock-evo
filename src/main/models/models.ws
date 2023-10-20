@@ -1,12 +1,12 @@
 type Generation {
-    index: Number,
+    index: Integer,
     worlds: World[]
 }
 
 type World {
-    size: Number,
+    size: Integer,
     entities: WorldEntity[],
-    age: Number
+    age: Integer
 }
 
 type WorldEntity {
@@ -20,12 +20,12 @@ type Organism {
 
 type Brain {
   char: String,
-  amountOfInputs: Number,
-  amountOfHiddenNeurons: Number,
-  amountOfOutputs: Number
+  amountOfInputs: Integer,
+  amountOfHiddenNeurons: Integer,
+  amountOfOutputs: Integer
 }
 
 type Coordinate {
-  x: Number,
-  y: Number
+  x: Integer,
+  y: Integer
 }
