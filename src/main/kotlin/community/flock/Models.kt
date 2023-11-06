@@ -1,5 +1,13 @@
 package community.flock
 
+data class SimulationConfiguration(
+  val numberOfGenerations: Int,
+  val worldSize: Int,
+  val maximumWorldAge: Int,
+  val numberOfSpecies: Int,
+  val numberOfOrganismsPerSpecies: Int
+)
+
 data class GenerationK(val index: Int, val worlds: List<WorldK>)
 
 data class WorldK(val size: Int, val coordinateMap: Map<CoordinateK, OrganismK>, val age: Int)

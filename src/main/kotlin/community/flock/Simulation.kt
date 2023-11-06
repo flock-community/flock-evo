@@ -1,58 +1,53 @@
 package community.flock
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import java.util.UUID
 import kotlin.math.tanh
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
-fun startSimulation(): Flow<GenerationK> {
-  val size = 50
-  val maxWorldAge = 100
+fun getInitialWorld(simulationConfiguration: SimulationConfiguration): WorldK {
   val organisms = initializeOrganisms(
-    numberOfSpecies = 100,
-    numberOfOrganismsPerSpecies = 2
+    numberOfSpecies = simulationConfiguration.numberOfSpecies,
+    numberOfOrganismsPerSpecies = simulationConfiguration.numberOfOrganismsPerSpecies
   )
-
-  val coordinateMap = spawnOrganisms(worldSize = size, organisms = organisms)
-  val initialWorld = WorldK(
-    size = size,
+  val coordinateMap = spawnOrganisms(worldSize = simulationConfiguration.worldSize, organisms = organisms)
+  return WorldK(
+    size = simulationConfiguration.worldSize,
     coordinateMap = coordinateMap,
     age = 0
   )
-
-  return runGenerations(
-    numberOfGenerations = 500,
-    initialWorld = initialWorld,
-    maxAge = maxWorldAge
-  )
 }
 
-fun runGenerations(numberOfGenerations: Int, initialWorld: WorldK, maxAge: Int): Flow<GenerationK> = flow {
-  val initialGeneration = runGeneration(maxAge = maxAge, world = initialWorld, generationIndex = 0)
-  emit(initialGeneration)
+fun startSimulation(simulationConfiguration: SimulationConfiguration): Flow<GenerationK> = flow {
+  val initialWorld = getInitialWorld(simulationConfiguration)
+  val initialGeneration = runWorlds(initialWorld, maxAge = simulationConfiguration.maximumWorldAge, generationIndex = 0)
+  var generation = runGeneration(initialGeneration, maxAge = simulationConfiguration.maximumWorldAge)
+  emit(generation)
 
-
-  //Todo convert to Flow
-  val generations = (1..numberOfGenerations).fold(
-    initial = listOf(initialGeneration)
-  ) { generationAccumulator: List<GenerationK>, generationIndex: Int ->
-    val lastGeneration = generationAccumulator.last()
-    val lastWorld = lastGeneration.worlds.last()
-    val offspring = getWorldForNextGeneration(lastWorld)
-    val newGeneration =
-      runGeneration(
-        maxAge = maxAge,
-        world = offspring,
-        generationIndex = generationIndex
-      )
-    emit(newGeneration)
-    generationAccumulator + newGeneration
+  (1..simulationConfiguration.numberOfGenerations).forEach { _ ->
+    generation = runGeneration(previousGeneration = generation, maxAge = simulationConfiguration.maximumWorldAge)
+    emit(generation)
   }
 }
 
-fun runGeneration(world: WorldK, maxAge: Int, generationIndex: Int): GenerationK {
+fun runGeneration(previousGeneration: GenerationK, maxAge: Int): GenerationK {
+  val lastWorld = previousGeneration.worlds.last()
+  val offspring = getWorldForNextGeneration(lastWorld)
+  val newGeneration =
+    runWorlds(
+      maxAge = maxAge,
+      world = offspring,
+      generationIndex = previousGeneration.index + 1
+    )
+  if (newGeneration.worlds.last().coordinateMap.isEmpty()) {
+    throw RuntimeException("No survivors")
+  }
+
+  return newGeneration
+}
+
+fun runWorlds(world: WorldK, maxAge: Int, generationIndex: Int): GenerationK {
   val worlds = (0..<maxAge)
     .fold(initial = listOf(world)) { oldWorlds: List<WorldK>, age: Int ->
       oldWorlds.last().let { lastWorld ->
@@ -79,7 +74,7 @@ fun getWorldForNextGeneration(lastWorld: WorldK): WorldK {
 }
 
 fun getSurvivors(world: WorldK): List<OrganismK> =
-  world.coordinateMap.filter { it.key.x in 1..48 && it.key.y in 1..48 }.values.toList()
+  world.coordinateMap.filter { it.key.x > world.size / 2 }.values.toList()
 
 fun reproduce(organisms: List<OrganismK>): List<OrganismK> =
   organisms.flatMap { listOf(createOffspring(it), createOffspring(it)) }
