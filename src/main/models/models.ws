@@ -15,14 +15,7 @@ type WorldEntity {
 
 type Organism {
   id: String,
-  speciesId: String,
-  brain: Brain
-}
-
-type Brain {
-  amountOfInputs: Integer,
-  amountOfHiddenNeurons: Integer,
-  amountOfOutputs: Integer
+  speciesId: String
 }
 
 type Coordinate {

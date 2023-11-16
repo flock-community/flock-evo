@@ -1,5 +1,4 @@
 import {
-  Brain,
   Coordinate,
   Generation,
   Organism,
@@ -10,7 +9,6 @@ import {
 export interface OrganismView {
   id: string;
   speciesId: string;
-  brain: Brain;
   backgroundColor: string;
 }
 
@@ -48,7 +46,7 @@ export const internalizeEntity = (entity: WorldEntity): EntityView => {
 }
 
 export const internalizeOrganism = (organism: Organism): OrganismView => {
-  const {brain, id, speciesId} = organism;
+  const {id, speciesId} = organism;
   const backgroundColor = '';
-  return {brain, backgroundColor, id, speciesId};
+  return {backgroundColor, id, speciesId};
 }

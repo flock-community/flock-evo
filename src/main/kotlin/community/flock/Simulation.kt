@@ -91,12 +91,10 @@ private fun createOffspring(organism: OrganismK): OrganismK = if (Random.nextFlo
 } else organism
 
 fun mutate(brain: BrainK): BrainK {
-  val mutatedInputToHidden = mutateOneWeight(brain.inputToHidden)
-  val mutatedHiddenToOutput = mutateOneWeight(brain.hiddenToOutput)
+  val mutatedWeights = brain.weights.map { mutateOneWeight(it) }
 
   return brain.copy(
-    inputToHidden = mutatedInputToHidden,
-    hiddenToOutput = mutatedHiddenToOutput
+    weights = mutatedWeights
   )
 }
 
@@ -120,7 +118,7 @@ private fun mutateOneWeight(weights: NDArray<Float, D2>): NDArray<Float, D2> {
 fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<OrganismK> =
   (0..<numberOfSpecies).flatMap {
     val speciesId = UUID.randomUUID().toString();
-    val brain = getRandomBrain(5, 10, 5)
+    val brain = getRandomBrain(amountOfInputs = 5, amountOfOutputs = 5)
     (0..<numberOfOrganismsPerSpecies)
       .map {
         val organismsId = UUID.randomUUID().toString()
@@ -143,18 +141,18 @@ fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>): Map<CoordinateK,
 
 fun getRandomBrain(
   amountOfInputs: Int,
-  amountOfHiddenNeurons: Int,
   amountOfOutputs: Int
 ): BrainK {
-  val inputToHidden = initPathways(inputAmount = amountOfInputs, outputAmount = amountOfHiddenNeurons)
-  val hiddenToOutput = initPathways(inputAmount = amountOfHiddenNeurons, outputAmount = amountOfOutputs)
+
+  val hiddenLayerSizes = listOf(10, 10, 10)
+
+  val informationDimensions = listOf(amountOfInputs) + hiddenLayerSizes + listOf(amountOfOutputs)
+  val layerWeights: List<NDArray<Float, D2>> = informationDimensions.windowed(2).map { (inputDim, outputDim) ->
+    initPathways(inputAmount = inputDim, outputAmount = outputDim)
+  }
 
   return BrainK(
-    inputToHidden = inputToHidden,
-    hiddenToOutput = hiddenToOutput,
-    amountOfInputs = amountOfInputs,
-    amountOfHiddenNeurons = amountOfHiddenNeurons,
-    amountOfOutputs = amountOfOutputs
+    weights = layerWeights
   )
 }
 
@@ -227,6 +225,11 @@ private fun multiplyMatrix(inputs: NDArray<Float, D1>, weights: NDArray<Float, D
   return weights.dot(inputs)
 }
 
+fun forwardPass(inputs: NDArray<Float, D1>, weights: List<NDArray<Float, D2>>): NDArray<Float, D1> =
+  weights.fold(initial = inputs) { acc, currentWeights ->
+    currentWeights.dot(acc.append(1F)).map<Float, D1, Float> { sigmoid(it) }
+  }
+
 fun stateIntention(
   brain: BrainK,
   northBlocked: Boolean,
@@ -235,28 +238,16 @@ fun stateIntention(
   westBlocked: Boolean,
   age: Int
 ): Behavior {
-  val matrixProduct: NDArray<Float, D1> = multiplyMatrix(
-    inputs = mk.ndarray(
-      listOf(
-        northBlocked.toFloat(),
-        eastBlocked.toFloat(),
-        southBlocked.toFloat(),
-        westBlocked.toFloat(),
-        age.toFloat(),
-        1F
-      )
-    ),
-    weights = brain.inputToHidden
-  ).map { sigmoid(it) }
-
-  val newInput = matrixProduct.append(1F)
-
-  val matrixProduct2: NDArray<Float, D1> = multiplyMatrix(
-    inputs = newInput,
-    weights = brain.hiddenToOutput
-  ).map { sigmoid(it) }
-
-  val outputIndex = matrixProduct2.indexOf(matrixProduct2.max() ?: throw Exception("Yolo"))
+  val inputFloats = mk.ndarray(
+    listOf(northBlocked.toFloat(),
+      eastBlocked.toFloat(),
+      southBlocked.toFloat(),
+      westBlocked.toFloat(),
+      age.toFloat()
+    )
+  )
+  val brainOutput = forwardPass(inputFloats, brain.weights)
+  val outputIndex = brainOutput.indexOf(brainOutput.max() ?: throw Exception("Yolo"))
 
   return Behavior.entries[outputIndex]
 }

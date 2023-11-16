@@ -25,7 +25,7 @@ fun GenerationK.externalize(): Generation {
     val entities: List<WorldEntity> = world.coordinateMap.map { (coordinate, organism) ->
       WorldEntity(
         coordinate = Coordinate(coordinate.x, coordinate.y),
-        organism = Organism(id = organism.id, speciesId = organism.speciesId, brain = organism.brain.externalize())
+        organism = Organism(id = organism.id, speciesId = organism.speciesId)
       )
     }
 
@@ -36,20 +36,8 @@ fun GenerationK.externalize(): Generation {
   return Generation(index, worlds = worlds)
 }
 
-fun BrainK.externalize(): Brain {
-  return Brain(
-    amountOfInputs = amountOfInputs,
-    amountOfHiddenNeurons = amountOfHiddenNeurons,
-    amountOfOutputs = amountOfOutputs
-  )
-}
-
 data class BrainK(
-  val amountOfInputs: Int,
-  val amountOfHiddenNeurons: Int,
-  val amountOfOutputs: Int,
-  val inputToHidden: NDArray<Float, D2>,
-  val hiddenToOutput: NDArray<Float, D2>
+  val weights: List<NDArray<Float, D2>>
 )
 
 enum class Behavior(val deltaX: Int, val deltaY: Int) {
