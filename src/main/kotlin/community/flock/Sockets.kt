@@ -6,16 +6,13 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import java.time.Duration
 
 val config: SimulationConfiguration = SimulationConfiguration(
   worldSize = 100,
-  numberOfGenerations = 200,
-  maximumWorldAge = 300,
+  numberOfGenerations = 400,
+  maximumWorldAge = 200,
   numberOfSpecies = 20,
   numberOfOrganismsPerSpecies = 5
 )
@@ -37,6 +34,7 @@ fun Application.configureSockets() {
           sendSerialized(it.externalize())
           delay(50)
         }
+        .retryWhen { cause, _ -> cause.message === "No survivors" }
         .onCompletion { close(CloseReason(CloseReason.Codes.NORMAL, "Simulation done")) }
         .collect()
     }

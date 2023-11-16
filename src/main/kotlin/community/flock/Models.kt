@@ -14,7 +14,7 @@ data class SimulationConfiguration(
 
 data class GenerationK(val index: Int, val worlds: List<WorldK>)
 
-data class WorldK(val size: Int, val coordinateMap: Map<CoordinateK, OrganismK>, val age: Int)
+data class WorldK(val size: Int, val organismMap: Map<CoordinateK, OrganismK>, val walls: List<CoordinateK>, val age: Int)
 
 data class OrganismK(val brain: BrainK, val id: String, val speciesId: String)
 
@@ -23,15 +23,14 @@ data class CoordinateK(val x: Int, val y: Int)
 fun GenerationK.externalize(): Generation {
   val worlds: List<World> = this.worlds.map { world ->
 
-    val entities: List<WorldEntity> = world.coordinateMap.map { (coordinate, organism) ->
+    val entities: List<WorldEntity> = world.organismMap.map { (coordinate, organism) ->
       WorldEntity(
         coordinate = Coordinate(coordinate.x, coordinate.y),
         organism = Organism(id = organism.id, speciesId = organism.speciesId, brain = organism.brain.externalize())
       )
     }
 
-    World(size = world.size, entities = entities)
-
+    World(size = world.size, entities = entities, walls = world.walls.map { Coordinate(x = it.x, y=it.y) })
   }
 
   return Generation(index, worlds = worlds)
@@ -57,7 +56,7 @@ fun BrainK.externalize(): Brain {
 }
 
 enum class Intention(val deltaX: Int, val deltaY: Int) {
-  DO_NOTHING(0, 0),
+//  DO_NOTHING(0, 0),
   GO_NORTH(0, 1),
   GO_EAST(1, 0),
   GO_SOUTH(0, -1),

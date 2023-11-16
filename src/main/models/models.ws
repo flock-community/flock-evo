@@ -5,7 +5,8 @@ type Generation {
 
 type World {
     size: Integer,
-    entities: WorldEntity[]
+    entities: WorldEntity[],
+    walls: Coordinate[]
 }
 
 type WorldEntity {

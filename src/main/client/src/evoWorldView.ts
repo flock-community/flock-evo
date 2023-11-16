@@ -21,12 +21,17 @@ export class EvoWorldView extends LitElement {
       margin-top: 1rem;
     }
 
+    .wall {
+      background-color: red;
+    }
+
     .organism-container {
       width: 100%;
       height: 100%;
       z-index: 5;
       background: transparent;
       cursor: pointer;
+
       &:hover {
         .organism {
           transform: scale(20);
@@ -108,7 +113,7 @@ export class EvoWorldView extends LitElement {
   }
 
   getBoxShadow(color: string | undefined) {
-    const defaultShadow =  '0 0 0 var(--block-size) #333, ' +
+    const defaultShadow = '0 0 0 var(--block-size) #333, ' +
       '0 var(--block-size) 0 var(--block-size) #333, ' +
       'calc(var(--block-size) * -2.5) calc(var(--block-size) * 1.5) 0 calc(var(--block-size) * .5) #333, ' +
       'calc(var(--block-size) * 2.5) calc(var(--block-size) * 1.5) 0 calc(var(--block-size) * .5) #333, ' +
@@ -146,19 +151,25 @@ export class EvoWorldView extends LitElement {
     <div class="world-grid"
          style="grid-template-rows: repeat(${this.world.size}, ${this.calculateHeight(this.world.size)}vh);
                 grid-template-columns: repeat(${this.world.size}, ${this.calculateWidth(this.world.size)}vw)">
-      ${repeat(this.world.entities, (entity: EntityView) => this.world ? html`
-          <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
+      ${this.world.walls.map(wall => html`
+        <span style="grid-row: ${this.world!.size - wall.y}/${this.world!.size - wall.y + 1};
+                        grid-column: ${wall.x + 1}/${wall.x + 2};">🧱
+        </span>`)}
+
+      ${repeat(this.world.organisms, (entity: EntityView) => this.world ? html`
+        <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
                         grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container">
-              <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
+          <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
                           height: ${this.calculateOrganismHeight(this.world.size)}vh;
                           --block-size: ${this.calculateBlockSize(this.world.size)}vw;
-                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))}" class="organism"></div>
-              <div class="brain">
-                <div class="text">
-                  <span>Ik denk heel hard na</span>
-                </div>
-              </div>
+                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))}"
+               class="organism"></div>
+          <div class="brain">
+            <div class="text">
+              <span>Ik denk heel hard na</span>
+            </div>
           </div>
+        </div>
       ` : nothing)}
     </div>
   ` : nothing

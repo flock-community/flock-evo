@@ -18,13 +18,25 @@ fun getInitialWorld(simulationConfiguration: SimulationConfiguration): WorldK {
     numberOfSpecies = simulationConfiguration.numberOfSpecies,
     numberOfOrganismsPerSpecies = simulationConfiguration.numberOfOrganismsPerSpecies
   )
-  val coordinateMap = spawnOrganisms(worldSize = simulationConfiguration.worldSize, organisms = organisms)
+  val walls = generateWalls(simulationConfiguration);
+  val coordinateMap =
+    spawnOrganisms(worldSize = simulationConfiguration.worldSize, organisms = organisms, walls = walls)
   return WorldK(
     size = simulationConfiguration.worldSize,
-    coordinateMap = coordinateMap,
+    walls = walls,
+    organismMap = coordinateMap,
     age = 0
   )
 }
+
+fun generateWalls(simulationConfiguration: SimulationConfiguration): List<CoordinateK> =
+  (0..simulationConfiguration.worldSize / 2).map {
+    CoordinateK(x = it, y = 35)
+  } +
+
+    (simulationConfiguration.worldSize - 40..simulationConfiguration.worldSize).map {
+      CoordinateK(x = it, y = 35)
+    }
 
 fun startSimulation(simulationConfiguration: SimulationConfiguration): Flow<GenerationK> = flow {
   val initialWorld = getInitialWorld(simulationConfiguration)
@@ -56,7 +68,7 @@ fun runGeneration(
       world = offspring,
       generationIndex = previousGeneration.index + 1
     )
-  if (newGeneration.worlds.last().coordinateMap.isEmpty()) {
+  if (newGeneration.worlds.last().organismMap.isEmpty()) {
     throw RuntimeException("No survivors")
   }
 
@@ -84,18 +96,21 @@ fun getWorldForNextGeneration(simulationConfiguration: SimulationConfiguration, 
     .shuffled()
     .take(simulationConfiguration.numberOfSpecies * simulationConfiguration.numberOfOrganismsPerSpecies)
 
-  val coordinateMap = spawnOrganisms(worldSize = lastWorld.size, organisms = offspring)
+  val coordinateMap = spawnOrganisms(worldSize = lastWorld.size, organisms = offspring, walls = lastWorld.walls)
 
-  return lastWorld.copy(age = lastWorld.age + 1, coordinateMap = coordinateMap)
+  return lastWorld.copy(age = lastWorld.age + 1, organismMap = coordinateMap)
 }
 
 fun getSurvivors(world: WorldK): List<OrganismK> =
-  world.coordinateMap.filter { it.key.x > world.size / 4 && it.key.x < world.size - 2 && it.key.y > world.size / 4 && it.key.y < world.size - 2 }.values.toList()
+  world.organismMap.filter {
+//    it.key.x in 25..75 && it.key.y in 25..75
+    it.key.y < 25
+  }.values.toList()
 
 fun reproduce(organisms: List<OrganismK>): List<OrganismK> =
   organisms.flatMap { listOf(createOffspring(it), createOffspring(it)) }
 
-private fun createOffspring(organism: OrganismK): OrganismK = if (Random.nextFloat() < 0.04) {
+private fun createOffspring(organism: OrganismK): OrganismK = if (Random.nextFloat() < 0.05) {
   organism.copy(brain = mutate(organism.brain), speciesId = UUID.randomUUID().toString())
 } else organism
 
@@ -114,7 +129,7 @@ private fun mutateOneWeight(weights: NDArray<Float, D2>): NDArray<Float, D2> {
 fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<OrganismK> =
   (0..<numberOfSpecies).flatMap {
     val speciesId = UUID.randomUUID().toString();
-    val brain = getRandomBrain(amountOfInputs = 7, amountOfOutputs = 5)
+    val brain = getRandomBrain(amountOfInputs = 7, amountOfOutputs = 4)
     (0..<numberOfOrganismsPerSpecies)
       .map {
         val organismsId = UUID.randomUUID().toString()
@@ -122,10 +137,12 @@ fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int):
       }
   }
 
-fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>): Map<CoordinateK, OrganismK> {
+fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>, walls: List<CoordinateK>): Map<CoordinateK, OrganismK> {
   val possibleCoordinates: List<CoordinateK> = (0..<worldSize)
+
     .flatMap { x ->
       (0..<worldSize)
+        .filter { y -> !walls.contains(CoordinateK(x = x, y = y)) }
         .map { y -> CoordinateK(x = x, y = y) }
     }
 
@@ -164,7 +181,7 @@ fun initPathways(inputAmount: Int, outputAmount: Int): NDArray<Float, D2> {
 }
 
 fun progressTime(world: WorldK, currentAge: Int): WorldK {
-  return (world.coordinateMap.entries)
+  return (world.organismMap.entries)
     .fold(initial = world) { acc: WorldK, entry: Map.Entry<CoordinateK, OrganismK> ->
       progressOrganism(
         world = acc,
@@ -185,7 +202,7 @@ fun progressOrganism(world: WorldK, organism: OrganismK, coordinate: CoordinateK
     y = coordinate.y,
     age = world.age
   )) {
-    Intention.DO_NOTHING -> world
+//    Intention.DO_NOTHING -> world
     Intention.GO_NORTH,
     Intention.GO_EAST,
     Intention.GO_SOUTH,
@@ -194,23 +211,28 @@ fun progressOrganism(world: WorldK, organism: OrganismK, coordinate: CoordinateK
 
 fun isTileBlocked(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: Int): Boolean {
   val newCoordinate = CoordinateK(coordinate.x + deltaX, coordinate.y + deltaY)
-  return isWithinBoundaries(world, newCoordinate) && isCoordinateAvailable(world, newCoordinate)
+  return !isWithinBoundaries(world, newCoordinate) || hasWall(world, newCoordinate) || hasOrganism(
+    world,
+    newCoordinate
+  )
 }
 
 fun isWithinBoundaries(world: WorldK, coordinate: CoordinateK): Boolean {
   return coordinate.x >= 0 && coordinate.x < world.size && coordinate.y >= 0 && coordinate.y < world.size
 }
 
-fun isCoordinateAvailable(world: WorldK, coordinate: CoordinateK): Boolean {
-  return !world.coordinateMap.containsKey(coordinate)
+fun hasWall(world: WorldK, coordinate: CoordinateK): Boolean = world.walls.contains(coordinate)
+
+fun hasOrganism(world: WorldK, coordinate: CoordinateK): Boolean {
+  return world.organismMap.containsKey(coordinate)
 }
 
 fun moveOrganism(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: Int): WorldK {
   val candidate = CoordinateK(x = coordinate.x + deltaX, y = coordinate.y + deltaY)
-  return if (isWithinBoundaries(world, candidate) && isCoordinateAvailable(world, candidate)) {
-    val updatedCoordinateMap: Map<CoordinateK, OrganismK> = world.coordinateMap
+  return if (isWithinBoundaries(world, candidate) && !hasWall(world, candidate) && !hasOrganism(world, candidate)) {
+    val updatedCoordinateMap: Map<CoordinateK, OrganismK> = world.organismMap
       .mapKeys { if (coordinate == it.key) candidate else it.key }
-    world.copy(coordinateMap = updatedCoordinateMap)
+    world.copy(organismMap = updatedCoordinateMap)
   } else {
     world
   }
