@@ -21,17 +21,62 @@ export class EvoWorldView extends LitElement {
       margin-top: 1rem;
     }
 
-    .organism {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      //width: 100%;
-      //height: 100%;
-      //--block-size: 0.1vw;
-      width: var(--block-size);
-      height: var(--block-size);
+    .organism-container {
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      background: transparent;
+      cursor: pointer;
+      &:hover {
+        .organism {
+          transform: scale(20);
+          z-index: 10;
+        }
+
+        .brain {
+          display: block;
+          width: 20vw;
+          height: 20vh;
+          top: -25vh;
+          font-size: 100%;
+          padding: 25%;
+        }
+      }
+
+      .organism {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        width: var(--block-size);
+        cursor: pointer;
+        transition: all 1s ease-in-out;
+        z-index: 4;
+      }
+
+      .brain {
+        border-radius: 50%;
+        border: 1px solid gray;
+        position: relative;
+        height: 0;
+        width: 0;
+        top: 0;
+        transition: all 1s ease-in-out;
+        background-color: lightgray;
+        z-index: 10;
+        font-size: 0;
+        text-align: center;
+
+        .text {
+          height: 100%;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+      }
     }
+
 
   `;
 
@@ -43,7 +88,11 @@ export class EvoWorldView extends LitElement {
   }
 
   calculateBlockSize(worldSize: number) {
-    return this.calculateWidth(worldSize) / 8;
+    return this.calculateWidth(worldSize) / 10;
+  }
+
+  calculateOrganismHeight(worldSize: number) {
+    return this.calculateHeight(worldSize) / 10;
   }
 
   calculateWidth(worldSize: number) {
@@ -96,15 +145,21 @@ export class EvoWorldView extends LitElement {
   render = () => this.world ? html`
     <div class="world-grid"
          style="grid-template-rows: repeat(${this.world.size}, ${this.calculateHeight(this.world.size)}vh);
-grid-template-columns: repeat(${this.world.size}, ${this.calculateWidth(this.world.size)}vw)">
+                grid-template-columns: repeat(${this.world.size}, ${this.calculateWidth(this.world.size)}vw)">
       ${repeat(this.world.entities, (entity: EntityView) => this.world ? html`
-        <div
-          style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
-          grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};
-          background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
-          --block-size: ${this.calculateBlockSize(this.world.size)}vw;
-          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))}" class="organism">
-        </div>` : nothing)}
+          <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
+                        grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container">
+              <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
+                          height: ${this.calculateOrganismHeight(this.world.size)}vh;
+                          --block-size: ${this.calculateBlockSize(this.world.size)}vw;
+                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))}" class="organism"></div>
+              <div class="brain">
+                <div class="text">
+                  <span>Ik denk heel hard na</span>
+                </div>
+              </div>
+          </div>
+      ` : nothing)}
     </div>
   ` : nothing
 }
