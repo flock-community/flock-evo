@@ -16,16 +16,15 @@
     "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"wds\"",
     "build": "tsc && npm run analyze -- --exclude dist",
     "prepublish": "tsc && npm run analyze -- --exclude dist",
-    "postinstall": "npm run generate && npm run generate-kotlin",
-    "generate": "wirespec $(pwd)/src/main/models/ --language TypeScript --output $(pwd)/generated/client/ --packageName models",
-    "generate-kotlin": "wirespec $(pwd)/src/main/models/ --language Kotlin --output $(pwd)/target/generated-sources/kotlin --packageName community.flock"
+    "postinstall": "npm run generate",
+    "generate": "wirespec $(pwd)/src/main/models/ --language TypeScript --output $(pwd)/generated/client/ --packageName models"
   },
   "dependencies": {
     "lit": "2.8.0"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.4.17",
-    "@flock/wirespec": "0.6.3",
+    "@flock/wirespec": "0.8.26",
     "@web/dev-server": "^0.1.34",
     "concurrently": "^5.3.0",
     "tslib": "^2.3.1",

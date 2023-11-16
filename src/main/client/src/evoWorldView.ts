@@ -50,7 +50,7 @@ export class EvoWorldView extends LitElement {
         overflow: hidden;
         width: var(--block-size);
         cursor: pointer;
-        transition: all 1s ease-in-out;
+        transition: width 1s ease-in-out, height 1s ease-in-out;
         z-index: 4;
       }
 
@@ -61,7 +61,7 @@ export class EvoWorldView extends LitElement {
         height: 0;
         width: 0;
         top: 0;
-        transition: all 1s ease-in-out;
+        transition: width 1s ease-in-out, height 1s ease-in-out;
         background-color: lightgray;
         z-index: 10;
         font-size: 0;

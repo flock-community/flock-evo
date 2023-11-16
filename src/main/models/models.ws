@@ -15,7 +15,20 @@ type WorldEntity {
 
 type Organism {
   id: String,
-  speciesId: String
+  speciesId: String,
+  brain: Brain
+}
+
+type Brain {
+  pathways: Pathway[]
+}
+
+type Pathway {
+  transmitters: Transmitter[]
+}
+
+type Transmitter {
+  receivers: Number[]
 }
 
 type Coordinate {

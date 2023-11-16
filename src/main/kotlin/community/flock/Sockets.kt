@@ -14,8 +14,8 @@ import java.time.Duration
 
 val config: SimulationConfiguration = SimulationConfiguration(
   worldSize = 100,
-  numberOfGenerations = 100,
-  maximumWorldAge = 200,
+  numberOfGenerations = 200,
+  maximumWorldAge = 300,
   numberOfSpecies = 20,
   numberOfOrganismsPerSpecies = 5
 )
@@ -23,7 +23,7 @@ val config: SimulationConfiguration = SimulationConfiguration(
 fun Application.configureSockets() {
   install(WebSockets) {
     pingPeriod = Duration.ofSeconds(60)
-    timeout = Duration.ofSeconds(60)
+    timeout = Duration.ofSeconds(180)
     maxFrameSize = Long.MAX_VALUE
     masking = false
     //Kotlin serializationx lib requires annotations, Jackson doesnt
