@@ -1,5 +1,8 @@
 package community.flock
 
+import org.jetbrains.kotlinx.multik.ndarray.data.D2
+import org.jetbrains.kotlinx.multik.ndarray.data.NDArray
+
 data class SimulationConfiguration(
   val numberOfGenerations: Int,
   val worldSize: Int,
@@ -45,8 +48,8 @@ data class BrainK(
   val amountOfInputs: Int,
   val amountOfHiddenNeurons: Int,
   val amountOfOutputs: Int,
-  val inputToHidden: List<List<Float>>,
-  val hiddenToOutput: List<List<Float>>
+  val inputToHidden: NDArray<Float, D2>,
+  val hiddenToOutput: NDArray<Float, D2>
 )
 
 enum class Behavior(val deltaX: Int, val deltaY: Int) {

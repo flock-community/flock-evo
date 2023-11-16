@@ -20,11 +20,6 @@
   <repositories>
   </repositories>
   <dependencies>
-<!--    <dependency>-->
-<!--      <groupId>org.jetbrains.kotlinx</groupId>-->
-<!--      <artifactId>kotlinx-coroutines-core</artifactId>-->
-<!--      <version>1.7.3</version>-->
-<!--    </dependency>-->
     <dependency>
       <groupId>io.ktor</groupId>
       <artifactId>ktor-server-core-jvm</artifactId>
@@ -89,6 +84,26 @@
       <artifactId>kotlinx-serialization-json-jvm</artifactId>
       <version>1.6.0</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <artifactId>multik-core</artifactId>
+      <groupId>org.jetbrains.kotlinx</groupId>
+      <version>0.2.2</version>
+    </dependency>
+    <dependency>
+      <artifactId>multik-core-jvm</artifactId>
+      <groupId>org.jetbrains.kotlinx</groupId>
+      <version>0.2.2</version>
+    </dependency>
+    <dependency>
+      <artifactId>multik-default</artifactId>
+      <groupId>org.jetbrains.kotlinx</groupId>
+      <version>0.2.2</version>
+    </dependency>
+    <dependency>
+      <artifactId>multik-default-jvm</artifactId>
+      <groupId>org.jetbrains.kotlinx</groupId>
+      <version>0.2.2</version>
     </dependency>
   </dependencies>
   <build>

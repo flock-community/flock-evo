@@ -1,10 +1,17 @@
 package community.flock
 
 import kotlinx.coroutines.flow.*
+import org.jetbrains.kotlinx.multik.api.linalg.dot
+import org.jetbrains.kotlinx.multik.api.mk
+import org.jetbrains.kotlinx.multik.api.ndarray
+import org.jetbrains.kotlinx.multik.api.zeros
+import org.jetbrains.kotlinx.multik.ndarray.data.D1
+import org.jetbrains.kotlinx.multik.ndarray.data.D2
+import org.jetbrains.kotlinx.multik.ndarray.data.NDArray
+import org.jetbrains.kotlinx.multik.ndarray.operations.*
 import java.util.UUID
 import kotlin.math.tanh
 import kotlin.random.Random
-import kotlin.test.assertEquals
 
 fun getInitialWorld(simulationConfiguration: SimulationConfiguration): WorldK {
   val organisms = initializeOrganisms(
@@ -93,20 +100,21 @@ fun mutate(brain: BrainK): BrainK {
   )
 }
 
-private fun mutateOneWeight(weights: List<List<Float>>): List<List<Float>> {
-  val amountOfWeights: Int = weights
-    .reduce { acc, floats -> acc + floats.size.toFloat() }
-    .size
-  val randomIndex = Random.nextInt(until = amountOfWeights)
-  val randomWeight = Random.nextFloat() * 2 - 1
-  return weights.mapIndexed { outer: Int, floats: List<Float> ->
-    floats.mapIndexed { inner, float ->
-      if (inner + outer == randomIndex) {
-        println("mutated $float to $randomWeight")
-        randomWeight
-      } else float
-    }
-  }
+private fun mutateOneWeight(weights: NDArray<Float, D2>): NDArray<Float, D2> {
+  return weights
+//  val amountOfWeights: Int = weights
+//    .reduce { acc, floats -> acc + floats.size.toFloat() }
+//    .size
+//  val randomIndex = Random.nextInt(until = amountOfWeights)
+//  val randomWeight = Random.nextFloat() * 2 - 1
+//  return weights.mapIndexed { outer: Int, floats: List<Float> ->
+//    floats.mapIndexed { inner, float ->
+//      if (inner + outer == randomIndex) {
+//        println("mutated $float to $randomWeight")
+//        randomWeight
+//      } else float
+//    }
+//  }
 }
 
 fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<OrganismK> =
@@ -150,12 +158,16 @@ fun getRandomBrain(
   )
 }
 
-fun initPathways(inputAmount: Int, outputAmount: Int): List<List<Float>> =
-  (0..<outputAmount).map {
+fun initPathways(inputAmount: Int, outputAmount: Int): NDArray<Float, D2> {
+  val old = (0..<outputAmount).map {
     (0..inputAmount).map {
       Random.nextFloat() * 2 - 1
     }
   }
+
+  val new = mk.zeros<Float>(outputAmount, inputAmount + 1).map { Random.nextFloat() * 2 - 1 }
+  return new
+}
 
 fun progressTime(world: WorldK, currentAge: Int): WorldK = (world.coordinateMap.entries)
   .fold(initial = world) { acc: WorldK, entry: Map.Entry<CoordinateK, OrganismK> ->
@@ -211,21 +223,8 @@ fun moveOrganism(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: In
 private fun sigmoid(inputValue: Float): Float = (tanh(inputValue / 2) + 1) / 2
 
 private fun Boolean.toFloat(): Float = if (this) 1F else 0F
-
-// This function does vector-matrix multiplication.
-// The inputs dimensionality should be 1 x numberOfInputs and the weights dimensionality should be numberOfOutputs x numberOfInputs.
-// Note that the function expects the transposed matrix: for the vector-matrix product v-A the function expects v and transpose(A).
-private fun multiplyMatrix(inputs: List<Float>, weights: List<List<Float>>): List<Float> {
-  val matrixProduct: List<Float> = weights.map { row ->
-    assertEquals(row.size, inputs.size)
-    row
-      .zip(inputs)
-      .map { it.first * it.second }
-      .reduce { acc, fl -> acc + fl }
-
-  }
-
-  return matrixProduct
+private fun multiplyMatrix(inputs: NDArray<Float, D1>, weights: NDArray<Float, D2>): NDArray<Float, D1> {
+  return weights.dot(inputs)
 }
 
 fun stateIntention(
@@ -236,24 +235,28 @@ fun stateIntention(
   westBlocked: Boolean,
   age: Int
 ): Behavior {
-  val matrixProduct: List<Float> = multiplyMatrix(
-    inputs = listOf(
-      northBlocked.toFloat(),
-      eastBlocked.toFloat(),
-      southBlocked.toFloat(),
-      westBlocked.toFloat(),
-      age.toFloat(),
-      1F
+  val matrixProduct: NDArray<Float, D1> = multiplyMatrix(
+    inputs = mk.ndarray(
+      listOf(
+        northBlocked.toFloat(),
+        eastBlocked.toFloat(),
+        southBlocked.toFloat(),
+        westBlocked.toFloat(),
+        age.toFloat(),
+        1F
+      )
     ),
     weights = brain.inputToHidden
   ).map { sigmoid(it) }
 
-  val matrixProduct2: List<Float> = multiplyMatrix(
-    inputs = matrixProduct + 1F,
+  val newInput = matrixProduct.append(1F)
+
+  val matrixProduct2: NDArray<Float, D1> = multiplyMatrix(
+    inputs = newInput,
     weights = brain.hiddenToOutput
   ).map { sigmoid(it) }
 
-  val outputIndex = matrixProduct2.indexOf(matrixProduct2.max())
+  val outputIndex = matrixProduct2.indexOf(matrixProduct2.max() ?: throw Exception("Yolo"))
 
   return Behavior.entries[outputIndex]
 }
