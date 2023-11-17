@@ -11,10 +11,10 @@ import java.time.Duration
 
 val config: SimulationConfiguration = SimulationConfiguration(
   worldSize = 100,
-  numberOfGenerations = 400,
-  maximumWorldAge = 200,
-  numberOfSpecies = 20,
-  numberOfOrganismsPerSpecies = 5
+  numberOfGenerations = 2,
+  maximumWorldAge = 5,
+  numberOfSpecies = 2,
+  numberOfOrganismsPerSpecies = 1
 )
 
 fun Application.configureSockets() {

@@ -58,17 +58,10 @@ export class EvoWorldView extends LitElement {
       z-index: 10;
       text-align: center;
       display: block;
-      width: 20rem;
+      width: 100%;
       height: 20rem;
       font-size: 100%;
-
-      .pathway-container {
-        width: 100%;
-        height: 100%;
-        display: grid;
-        grid-template-rows: 1rem 1fr 1rem;
-        grid-template-columns: 1rem repeat(var(amountOfPathways), 1fr) 1rem;
-      }
+      margin-top: 1rem;
     }
 
   `;
