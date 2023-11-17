@@ -10,7 +10,7 @@ export interface OrganismView {
   id: string;
   speciesId: string;
   backgroundColor: string;
-  brain: Brain;
+  brain: BrainView;
 }
 
 export interface GenerationView {
@@ -27,6 +27,21 @@ export interface WorldView {
 export interface EntityView {
   coordinate: Coordinate,
   organism: OrganismView;
+}
+
+export interface BrainView {
+  nodeList: NodeView[][];
+  pathways: PathwayView[][];
+}
+
+export interface PathwayView {
+  startNode: string;
+  endNode: string;
+  connectionStrength: number;
+}
+
+export interface NodeView {
+  id: string;
 }
 
 export const internalizeGeneration = (generation: Generation): GenerationView => {
@@ -51,4 +66,15 @@ export const internalizeOrganism = (organism: Organism): OrganismView => {
   const {id, speciesId, brain} = organism;
   const backgroundColor = '';
   return {backgroundColor, id, speciesId, brain};
+}
+
+export const internalizeBrain = (brain: Brain): BrainView => {
+  for (let i = 0; i < brain.pathways.length; i++) {
+
+  }
+  brain.pathways.forEach(pathway => {
+    pathway.transmitters.forEach(transmitter => {
+
+    })
+  })
 }

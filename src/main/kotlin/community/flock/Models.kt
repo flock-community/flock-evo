@@ -4,7 +4,6 @@ import community.flock.wirespec.generated.*
 import org.jetbrains.kotlinx.multik.ndarray.data.D2
 import org.jetbrains.kotlinx.multik.ndarray.data.NDArray
 import org.jetbrains.kotlinx.multik.ndarray.data.get
-import javax.sound.midi.Transmitter
 
 data class SimulationConfiguration(
   val numberOfGenerations: Int,
