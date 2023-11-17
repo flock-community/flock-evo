@@ -1,10 +1,9 @@
 import {
-    Brain,
-    Coordinate,
-    Generation,
-    Organism,
-    World,
-    WorldEntity
+  Brain,
+  Coordinate,
+  Generation, Organism,
+  World,
+  WorldEntity
 } from "../../../../../generated/client/models/Models";
 
 export interface OrganismView {

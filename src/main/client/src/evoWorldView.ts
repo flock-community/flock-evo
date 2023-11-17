@@ -3,7 +3,6 @@ import {customElement, property, state} from 'lit/decorators.js';
 import {EntityView, OrganismView, WorldView} from "./models/models";
 import {repeat} from "lit/directives/repeat.js";
 import {ColorService} from "./colorService";
-import {Brain, Organism} from "../../../../generated/client/models/Models";
 
 @customElement('flock-evo-world')
 export class EvoWorldView extends LitElement {
@@ -82,9 +81,7 @@ export class EvoWorldView extends LitElement {
   private world: WorldView | undefined
 
   @state()
-  private selectedBrain: Brain | undefined
-
-  private selectedOrganism: Organism | undefined
+  private selectedOrganism: OrganismView | undefined
 
   connectedCallback() {
     super.connectedCallback();
@@ -145,11 +142,22 @@ export class EvoWorldView extends LitElement {
     return defaultShadow.split('#333').join(color)
   }
 
+  clickOrganism(organism: OrganismView) {
+    console.log(organism);
+    if (organism.id === this.selectedOrganism?.id) {
+      this.selectedOrganism = undefined;
+    } else {
+      this.selectedOrganism = organism;
+    }
+  }
+
   render = () => this.world ? html`
     <div>
       ${(this.selectedOrganism) ? html`
-                <div class="brain"><flock-brain-viewer .organism="${this.selectedOrganism}">
-                </flock-brain-viewer></div>` : nothing }
+        <div class="brain">
+          <flock-brain-viewer .organism="${this.selectedOrganism}">
+          </flock-brain-viewer>
+        </div>` : nothing}
     </div>
     <div class="world-grid"
          style="grid-template-rows: repeat(${this.world.size}, ${this.calculateHeight(this.world.size)}vh);
@@ -161,7 +169,8 @@ export class EvoWorldView extends LitElement {
 
       ${repeat(this.world.organisms, (entity: EntityView) => this.world ? html`
         <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
-                        grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container" @click="${this.selectOrganism(entity.organism)}">
+                        grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container"
+             @click="${this.clickOrganism(entity.organism)}">
           <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
                           height: ${this.calculateOrganismHeight(this.world.size)}vh;
                           --block-size: ${this.calculateBlockSize(this.world.size)}vw;
@@ -172,13 +181,4 @@ export class EvoWorldView extends LitElement {
       ` : nothing)}
     </div>
   ` : nothing
-
-  private selectOrganism(organism: Organism) {
-    console.log(organism);
-    if (organism.id === this.selectedOrganism?.id) {
-        this.selectedOrganism = undefined;
-    } else {
-      this.selectedOrganism = organism;
-    }
-  }
 }
