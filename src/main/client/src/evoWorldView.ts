@@ -49,31 +49,27 @@ export class EvoWorldView extends LitElement {
         transition: width 1s ease-in-out, height 1s ease-in-out;
         z-index: 4;
       }
-
-      .brain {
-        border-radius: 5px;
-        border: 1px solid gray;
-        position: relative;
-        background-color: lightgray;
-        z-index: 10;
-        text-align: center;
-        display: block;
-        width: 20vw;
-        height: 20vh;
-        top: -25vh;
-        font-size: 100%;
-        padding: 25%;
-
-        .pathway-container {
-          width: 100%;
-          height: 100%;
-          display: grid;
-          grid-template-rows: 1rem 1fr 1rem;
-          grid-template-columns: 1rem repeat(var(amountOfPathways), 1fr) 1rem;
-        }
-      }
     }
 
+    .brain {
+      border-radius: 5px;
+      border: 1px solid gray;
+      background-color: lightgray;
+      z-index: 10;
+      text-align: center;
+      display: block;
+      width: 20rem;
+      height: 20rem;
+      font-size: 100%;
+
+      .pathway-container {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-rows: 1rem 1fr 1rem;
+        grid-template-columns: 1rem repeat(var(amountOfPathways), 1fr) 1rem;
+      }
+    }
 
   `;
 
@@ -170,7 +166,7 @@ export class EvoWorldView extends LitElement {
       ${repeat(this.world.organisms, (entity: EntityView) => this.world ? html`
         <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
                         grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container"
-             @click="${this.clickOrganism(entity.organism)}">
+             @click="${() => this.clickOrganism(entity.organism)}">
           <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
                           height: ${this.calculateOrganismHeight(this.world.size)}vh;
                           --block-size: ${this.calculateBlockSize(this.world.size)}vw;
