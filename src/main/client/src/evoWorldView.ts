@@ -1,8 +1,9 @@
 import {css, html, LitElement, nothing} from 'lit';
-import {customElement, property} from 'lit/decorators.js';
-import {EntityView, WorldView} from "./models/models";
+import {customElement, property, state} from 'lit/decorators.js';
+import {EntityView, OrganismView, WorldView} from "./models/models";
 import {repeat} from "lit/directives/repeat.js";
 import {ColorService} from "./colorService";
+import {Brain, Organism} from "../../../../generated/client/models/Models";
 
 @customElement('flock-evo-world')
 export class EvoWorldView extends LitElement {
@@ -37,15 +38,6 @@ export class EvoWorldView extends LitElement {
           transform: scale(20);
           z-index: 10;
         }
-
-        .brain {
-          display: block;
-          width: 20vw;
-          height: 20vh;
-          top: -25vh;
-          font-size: 100%;
-          padding: 25%;
-        }
       }
 
       .organism {
@@ -60,24 +52,25 @@ export class EvoWorldView extends LitElement {
       }
 
       .brain {
-        border-radius: 50%;
+        border-radius: 5px;
         border: 1px solid gray;
         position: relative;
-        height: 0;
-        width: 0;
-        top: 0;
-        transition: width 1s ease-in-out, height 1s ease-in-out;
         background-color: lightgray;
         z-index: 10;
-        font-size: 0;
         text-align: center;
+        display: block;
+        width: 20vw;
+        height: 20vh;
+        top: -25vh;
+        font-size: 100%;
+        padding: 25%;
 
-        .text {
-          height: 100%;
+        .pathway-container {
           width: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+          height: 100%;
+          display: grid;
+          grid-template-rows: 1rem 1fr 1rem;
+          grid-template-columns: 1rem repeat(var(amountOfPathways), 1fr) 1rem;
         }
       }
     }
@@ -87,6 +80,11 @@ export class EvoWorldView extends LitElement {
 
   @property()
   private world: WorldView | undefined
+
+  @state()
+  private selectedBrain: Brain | undefined
+
+  private selectedOrganism: Organism | undefined
 
   connectedCallback() {
     super.connectedCallback();
@@ -148,6 +146,11 @@ export class EvoWorldView extends LitElement {
   }
 
   render = () => this.world ? html`
+    <div>
+      ${(this.selectedOrganism) ? html`
+                <div class="brain"><flock-brain-viewer .organism="${this.selectedOrganism}">
+                </flock-brain-viewer></div>` : nothing }
+    </div>
     <div class="world-grid"
          style="grid-template-rows: repeat(${this.world.size}, ${this.calculateHeight(this.world.size)}vh);
                 grid-template-columns: repeat(${this.world.size}, ${this.calculateWidth(this.world.size)}vw)">
@@ -158,19 +161,24 @@ export class EvoWorldView extends LitElement {
 
       ${repeat(this.world.organisms, (entity: EntityView) => this.world ? html`
         <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
-                        grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container">
+                        grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container" @click="${this.selectOrganism(entity.organism)}">
           <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
                           height: ${this.calculateOrganismHeight(this.world.size)}vh;
                           --block-size: ${this.calculateBlockSize(this.world.size)}vw;
-                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))}"
+                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))};"
                class="organism"></div>
-          <div class="brain">
-            <div class="text">
-              <span>Ik denk heel hard na</span>
-            </div>
-          </div>
         </div>
+
       ` : nothing)}
     </div>
   ` : nothing
+
+  private selectOrganism(organism: Organism) {
+    console.log(organism);
+    if (organism.id === this.selectedOrganism?.id) {
+        this.selectedOrganism = undefined;
+    } else {
+      this.selectedOrganism = organism;
+    }
+  }
 }

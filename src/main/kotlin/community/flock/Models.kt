@@ -3,6 +3,8 @@ package community.flock
 import community.flock.wirespec.generated.*
 import org.jetbrains.kotlinx.multik.ndarray.data.D2
 import org.jetbrains.kotlinx.multik.ndarray.data.NDArray
+import org.jetbrains.kotlinx.multik.ndarray.data.get
+import javax.sound.midi.Transmitter
 
 data class SimulationConfiguration(
   val numberOfGenerations: Int,
@@ -42,17 +44,17 @@ data class BrainK(
 )
 
 fun BrainK.externalize(): Brain {
-//  val pathways = this.weights.map {
-//    val transmitters = (0..<it.shape[0]).map { transmitterIndex ->
-//      val receivers = (0..<it.shape[1]).map { receiverIndex ->
-//        it[transmitterIndex, receiverIndex]
-//      }
-//      Transmitter(receivers = receivers)
-//    }
-//    Pathway(transmitters = transmitters)
-//  }
-//  return Brain(pathways = pathways)
-  return Brain(pathways = listOf())
+  val pathways = this.weights.map {
+    val transmitters = (0..<it.shape[0]).map { transmitterIndex ->
+      val receivers = (0..<it.shape[1]).map { receiverIndex ->
+        it[transmitterIndex, receiverIndex]
+      }
+      Transmitter(receivers = receivers)
+    }
+    Pathway(transmitters = transmitters)
+  }
+  return Brain(pathways = pathways)
+//  return Brain(pathways = listOf())
 }
 
 enum class Intention(val deltaX: Int, val deltaY: Int) {

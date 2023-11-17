@@ -1,15 +1,17 @@
 import {
-  Coordinate,
-  Generation,
-  Organism,
-  World,
-  WorldEntity
+    Brain,
+    Coordinate,
+    Generation,
+    Organism,
+    World,
+    WorldEntity
 } from "../../../../../generated/client/models/Models";
 
 export interface OrganismView {
   id: string;
   speciesId: string;
   backgroundColor: string;
+  brain: Brain;
 }
 
 export interface GenerationView {
@@ -47,7 +49,7 @@ export const internalizeEntity = (entity: WorldEntity): EntityView => {
 }
 
 export const internalizeOrganism = (organism: Organism): OrganismView => {
-  const {id, speciesId} = organism;
+  const {id, speciesId, brain} = organism;
   const backgroundColor = '';
-  return {backgroundColor, id, speciesId};
+  return {backgroundColor, id, speciesId, brain};
 }
