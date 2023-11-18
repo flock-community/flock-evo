@@ -52,15 +52,7 @@ export class EvoWorldView extends LitElement {
     }
 
     .brain {
-      border-radius: 5px;
-      border: 1px solid gray;
-      background-color: lightgray;
       z-index: 10;
-      text-align: center;
-      display: block;
-      width: 100%;
-      height: 20rem;
-      font-size: 100%;
       margin-top: 1rem;
     }
 

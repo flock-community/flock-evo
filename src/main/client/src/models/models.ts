@@ -1,7 +1,8 @@
 import {
   Brain,
   Coordinate,
-  Generation, Organism,
+  Generation,
+  Organism,
   World,
   WorldEntity
 } from "../../../../../generated/client/models/Models";
@@ -37,7 +38,7 @@ export interface BrainView {
 export interface PathwayView {
   startNode: string;
   endNode: string;
-  connectionStrength: number;
+  connectionStrength: Number;
 }
 
 export interface NodeView {
@@ -64,17 +65,52 @@ export const internalizeEntity = (entity: WorldEntity): EntityView => {
 
 export const internalizeOrganism = (organism: Organism): OrganismView => {
   const {id, speciesId, brain} = organism;
-  const backgroundColor = '';
-  return {backgroundColor, id, speciesId, brain};
+  return {backgroundColor: '', id, speciesId, brain: internalizeBrain(brain)};
 }
 
 export const internalizeBrain = (brain: Brain): BrainView => {
+  const nodeList: NodeView[][] = [];
+  const pathways: PathwayView[][] = [];
+
   for (let i = 0; i < brain.pathways.length; i++) {
+    const pathway = brain.pathways[i];
 
+    // if (i === 0) {
+    // create starting nodes + ending nodes
+    const startingNodes: NodeView[] = [];
+    const endNodes: NodeView[] = [];
+    const pathwayViews: PathwayView[] = [];
+
+    for (let j = 0; j < pathway.transmitters.length; j++) {
+      let id = i + '-' + j;
+      startingNodes.push({id: id})
+
+      let transmitter = pathway.transmitters[j];
+      for (let k = 0; k < transmitter.receivers.length; k++) {
+        const pathwayView: PathwayView = {
+          startNode: id,
+          endNode: (i + 1) + '-' + k,
+          connectionStrength: transmitter.receivers[k]
+        };
+        pathwayViews.push(pathwayView);
+      }
+    }
+    for (let j = 0; j < pathway.transmitters[0].receivers.length; j++) {
+      endNodes.push({id: (i + 1) + '-' + j})
+    }
+    if (i === 0) {
+      nodeList.push(startingNodes);
+    }
+    nodeList.push(endNodes);
+    pathways.push(pathwayViews);
+    // }
   }
-  brain.pathways.forEach(pathway => {
-    pathway.transmitters.forEach(transmitter => {
 
-    })
-  })
+  // TODO: remove
+  const fakePathways: PathwayView[][] = [[
+    {startNode: '0-0', endNode: '1-0', connectionStrength: 1},
+    {startNode: '0-4', endNode: '1-1', connectionStrength: 1}
+  ]];
+
+  return {nodeList, pathways: fakePathways}
 }
