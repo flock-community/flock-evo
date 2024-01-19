@@ -1,4 +1,19 @@
+type SimulationConfiguration {
+    renderSimulationsWithoutSurvivors: Boolean,
+    numberOfGenerations: Integer,
+    offspringMutationChance: Number,
+    weightMutationStandardDeviation: Number,
+    worldSize: Integer,
+    maximumWorldAge: Integer,
+    numberOfSpecies: Integer,
+    numberOfOrganismsPerSpecies: Integer,
+    amountOfInputNeurons: Integer,
+    hiddenLayerShape: Integer[],
+    amountOfOutputNeurons: Integer
+}
+
 type Generation {
+    simulationId: String,
     index: Integer,
     worlds: World[]
 }
@@ -6,7 +21,8 @@ type Generation {
 type World {
     size: Integer,
     entities: WorldEntity[],
-    walls: Coordinate[]
+    walls: Coordinate[],
+    survivalZones: Coordinate[]
 }
 
 type WorldEntity {
@@ -14,10 +30,14 @@ type WorldEntity {
     organism: Organism
 }
 
+type Species {
+  id: String,
+  brain: Brain
+}
+
 type Organism {
   id: String,
-  speciesId: String,
-  brain: Brain
+  species: Species
 }
 
 type Brain {

@@ -3,6 +3,7 @@ import {customElement, property, state} from 'lit/decorators.js';
 import {EntityView, OrganismView, WorldView} from "./models/models";
 import {repeat} from "lit/directives/repeat.js";
 import {ColorService} from "./colorService";
+import {Coordinate} from "../../../../generated/client/models/Models";
 
 @customElement('flock-evo-world')
 export class EvoWorldView extends LitElement {
@@ -147,15 +148,21 @@ export class EvoWorldView extends LitElement {
         <span style="grid-row: ${this.world!.size - wall.y}/${this.world!.size - wall.y + 1};
                         grid-column: ${wall.x + 1}/${wall.x + 2};">🧱
         </span>`)}
+      ${repeat(this.world.survivalZones, (coordinate: Coordinate) => this.world ? html`
+        <div style="grid-row: ${this.world.size - coordinate.y}/${this.world.size - coordinate.y + 1};
+                        grid-column: ${coordinate.x + 1}/${coordinate.x + 2};" class="organism-container">
+          <div style="width: 100%; height: 100%; background-color: lightgreen"></div>
+        </div>
 
+      ` : nothing)}
       ${repeat(this.world.organisms, (entity: EntityView) => this.world ? html`
         <div style="grid-row: ${this.world.size - entity.coordinate.y}/${this.world.size - entity.coordinate.y + 1};
                         grid-column: ${entity.coordinate.x + 1}/${entity.coordinate.x + 2};" class="organism-container"
              @click="${() => this.clickOrganism(entity.organism)}">
-          <div style="background-color: ${this.getBackgroundColor(entity.organism.speciesId)};
+          <div style="background-color: ${this.getBackgroundColor(entity.organism.species.id)};
                           height: ${this.calculateOrganismHeight(this.world.size)}vh;
                           --block-size: ${this.calculateBlockSize(this.world.size)}vw;
-                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.speciesId))};"
+                          box-shadow: ${this.getBoxShadow(this.getBackgroundColor(entity.organism.species.id))};"
                class="organism"></div>
         </div>
 

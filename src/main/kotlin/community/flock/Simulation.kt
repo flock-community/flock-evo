@@ -1,5 +1,10 @@
 package community.flock
 
+import community.flock.wirespec.generated.Coordinate
+import community.flock.wirespec.generated.SimulationConfiguration
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot
 import org.jetbrains.kotlinx.multik.api.mk
@@ -10,72 +15,98 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2
 import org.jetbrains.kotlinx.multik.ndarray.data.NDArray
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
 import java.util.UUID
+import kotlin.math.abs
 import kotlin.math.tanh
 import kotlin.random.Random
 
-fun getInitialWorld(simulationConfiguration: SimulationConfiguration): WorldK {
+fun getInitialWorld(simulationConfigurationK: SimulationConfiguration): WorldK {
   val organisms = initializeOrganisms(
-    numberOfSpecies = simulationConfiguration.numberOfSpecies,
-    numberOfOrganismsPerSpecies = simulationConfiguration.numberOfOrganismsPerSpecies
+    simulationConfigurationK
   )
-  val walls = generateWalls(simulationConfiguration);
+//  val walls = generateWalls(simulationConfigurationK)
+  val walls = listOf<CoordinateK>()
+  val survivalZone = generateSurviveZone(simulationConfigurationK)
   val coordinateMap =
-    spawnOrganisms(worldSize = simulationConfiguration.worldSize, organisms = organisms, walls = walls)
+    spawnOrganisms(
+      worldSize = simulationConfigurationK.worldSize,
+      organisms = organisms,
+      walls = walls,
+      survivalZone = survivalZone
+    )
   return WorldK(
-    size = simulationConfiguration.worldSize,
+    size = simulationConfigurationK.worldSize,
     walls = walls,
+    survivalZone = survivalZone,
     organismMap = coordinateMap,
     age = 0
   )
 }
 
-fun generateWalls(simulationConfiguration: SimulationConfiguration): List<CoordinateK> =
-  (0..simulationConfiguration.worldSize / 2).map {
-    CoordinateK(x = it, y = 35)
-  } +
+fun generateWalls(simulationConfigurationK: SimulationConfiguration): List<CoordinateK> =
+  (5..25).map {
+    CoordinateK(x = it, y = 25)
+  } + (5..25).map {
+    CoordinateK(x = 25, y = it)
+  }
 
-    (simulationConfiguration.worldSize - 40..simulationConfiguration.worldSize).map {
-      CoordinateK(x = it, y = 35)
+fun generateSurviveZone(simulationConfigurationK: SimulationConfiguration): List<CoordinateK> {
+  return (0..20)
+    .flatMap { x ->
+      (0..20)
+        .map { y -> CoordinateK(x = x, y = y) }
+    } + (30..50)
+    .flatMap { x ->
+      (30..50)
+        .map { y -> CoordinateK(x = x, y = y) }
     }
+}
 
-fun startSimulation(simulationConfiguration: SimulationConfiguration): Flow<GenerationK> = flow {
-  val initialWorld = getInitialWorld(simulationConfiguration)
-  val initialGeneration = runWorlds(initialWorld, maxAge = simulationConfiguration.maximumWorldAge, generationIndex = 0)
+fun startSimulation(simulationConfigurationK: SimulationConfiguration): Flow<GenerationK> = flow {
+  val simulationId = UUID.randomUUID().toString()
+  val initialWorld = getInitialWorld(simulationConfigurationK)
+  val initialGeneration = runWorlds(
+    initialWorld,
+    maxAge = simulationConfigurationK.maximumWorldAge,
+    generationIndex = 0,
+    simulationId = simulationId
+  )
+  emit(initialGeneration)
   var generation =
-    runGeneration(simulationConfiguration, initialGeneration, maxAge = simulationConfiguration.maximumWorldAge)
+    runGeneration(simulationConfigurationK, initialGeneration, maxAge = simulationConfigurationK.maximumWorldAge)
   emit(generation)
 
-  (1..simulationConfiguration.numberOfGenerations).forEach { _ ->
+  (1..simulationConfigurationK.numberOfGenerations).forEach { _ ->
     generation = runGeneration(
-      simulationConfiguration,
+      simulationConfigurationK,
       previousGeneration = generation,
-      maxAge = simulationConfiguration.maximumWorldAge
+      maxAge = simulationConfigurationK.maximumWorldAge
     )
     emit(generation)
   }
 }
 
-fun runGeneration(
-  simulationConfiguration: SimulationConfiguration,
+suspend fun runGeneration(
+  simulationConfigurationK: SimulationConfiguration,
   previousGeneration: GenerationK,
   maxAge: Int
 ): GenerationK {
   val lastWorld = previousGeneration.worlds.last()
-  val offspring = getWorldForNextGeneration(simulationConfiguration, lastWorld)
+  val offspring = getWorldForNextGeneration(simulationConfigurationK, lastWorld)
   val newGeneration =
     runWorlds(
       maxAge = maxAge,
       world = offspring,
-      generationIndex = previousGeneration.index + 1
+      generationIndex = previousGeneration.index + 1,
+      simulationId = previousGeneration.simulationId.toString()
     )
   if (newGeneration.worlds.last().organismMap.isEmpty()) {
-    throw RuntimeException("No survivors")
+    throw RuntimeException("No survivors in ${previousGeneration.index}")
   }
 
   return newGeneration
 }
 
-fun runWorlds(world: WorldK, maxAge: Int, generationIndex: Int): GenerationK {
+suspend fun runWorlds(world: WorldK, maxAge: Int, generationIndex: Int, simulationId: String): GenerationK {
   val worlds = (0..<maxAge)
     .fold(initial = listOf(world)) { oldWorlds: List<WorldK>, age: Int ->
       oldWorlds.last().let { lastWorld ->
@@ -87,32 +118,47 @@ fun runWorlds(world: WorldK, maxAge: Int, generationIndex: Int): GenerationK {
         } ?: (oldWorlds + progressTime(lastWorld, age))
       }
     }
-  return GenerationK(index = generationIndex, worlds = worlds)
+  return GenerationK(simulationId = UUID.fromString(simulationId), index = generationIndex, worlds = worlds)
 }
 
-fun getWorldForNextGeneration(simulationConfiguration: SimulationConfiguration, lastWorld: WorldK): WorldK {
+fun getWorldForNextGeneration(simulationConfigurationK: SimulationConfiguration, lastWorld: WorldK): WorldK {
   val survivors = getSurvivors(world = lastWorld)
-  val offspring = reproduce(survivors)
+  val offspring = reproduce(simulationConfigurationK, survivors)
     .shuffled()
-    .take(simulationConfiguration.numberOfSpecies * simulationConfiguration.numberOfOrganismsPerSpecies)
+    .take(simulationConfigurationK.numberOfSpecies * simulationConfigurationK.numberOfOrganismsPerSpecies)
 
-  val coordinateMap = spawnOrganisms(worldSize = lastWorld.size, organisms = offspring, walls = lastWorld.walls)
+  val coordinateMap = spawnOrganisms(
+    worldSize = lastWorld.size,
+    organisms = offspring,
+    walls = lastWorld.walls,
+    survivalZone = lastWorld.survivalZone
+  )
 
   return lastWorld.copy(age = lastWorld.age + 1, organismMap = coordinateMap)
 }
 
 fun getSurvivors(world: WorldK): List<OrganismK> =
   world.organismMap.filter {
-//    it.key.x in 25..75 && it.key.y in 25..75
-    it.key.y < 25
+    world.survivalZone.contains(it.key)
   }.values.toList()
 
-fun reproduce(organisms: List<OrganismK>): List<OrganismK> =
-  organisms.flatMap { listOf(createOffspring(it), createOffspring(it)) }
+fun reproduce(simulationConfigurationK: SimulationConfiguration, organisms: List<OrganismK>): List<OrganismK> =
+  organisms.flatMap {
+    listOf(
+      createOffspring(simulationConfigurationK, it, mutate = false),
+      createOffspring(simulationConfigurationK, it, mutate = true),
+    )
+  }
 
-private fun createOffspring(organism: OrganismK): OrganismK = if (Random.nextFloat() < 0.05) {
-  organism.copy(brain = mutate(organism.brain), speciesId = UUID.randomUUID().toString())
-} else organism
+private fun createOffspring(
+  simulationConfigurationK: SimulationConfiguration,
+  organism: OrganismK,
+  mutate: Boolean
+): OrganismK =
+  if (mutate && Random.nextFloat() < simulationConfigurationK.offspringMutationChance.toFloat()) {
+    val newSpecies = SpeciesK(id = UUID.randomUUID().toString(), brain = mutate(organism.species.brain))
+    OrganismK(id = UUID.randomUUID().toString(), species = newSpecies, previousCoordinate = null)
+  } else organism
 
 fun mutate(brain: BrainK): BrainK {
   val mutatedWeights = brain.weights.map { mutateOneWeight(it) }
@@ -123,26 +169,33 @@ fun mutate(brain: BrainK): BrainK {
 }
 
 private fun mutateOneWeight(weights: NDArray<Float, D2>): NDArray<Float, D2> {
-  return weights.map { java.util.Random().nextGaussian(it.toDouble(), 0.5).toFloat() }
+  return weights.map { java.util.Random().nextGaussian(it.toDouble(), 0.1).toFloat() }
 }
 
-fun initializeOrganisms(numberOfSpecies: Int, numberOfOrganismsPerSpecies: Int): List<OrganismK> =
-  (0..<numberOfSpecies).flatMap {
-    val speciesId = UUID.randomUUID().toString();
-    val brain = getRandomBrain(amountOfInputs = 7, amountOfOutputs = 4)
-    (0..<numberOfOrganismsPerSpecies)
+fun initializeOrganisms(simulationConfigurationK: SimulationConfiguration): List<OrganismK> =
+  (0..<simulationConfigurationK.numberOfSpecies).flatMap {
+    val speciesId = UUID.randomUUID().toString()
+    val brain = getRandomBrain(simulationConfigurationK = simulationConfigurationK)
+    val species = SpeciesK(id = speciesId, brain = brain)
+    (0..<simulationConfigurationK.numberOfOrganismsPerSpecies)
       .map {
         val organismsId = UUID.randomUUID().toString()
-        OrganismK(brain = brain, id = organismsId, speciesId = speciesId)
+        OrganismK(id = organismsId, species = species, previousCoordinate = null)
       }
   }
 
-fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>, walls: List<CoordinateK>): Map<CoordinateK, OrganismK> {
+fun spawnOrganisms(
+  worldSize: Int,
+  organisms: List<OrganismK>,
+  walls: List<CoordinateK>,
+  survivalZone: List<CoordinateK>
+): Map<CoordinateK, OrganismK> {
   val possibleCoordinates: List<CoordinateK> = (0..<worldSize)
-
     .flatMap { x ->
       (0..<worldSize)
+        .filter { y -> !survivalZone.contains(CoordinateK(x = x, y = y)) }
         .filter { y -> !walls.contains(CoordinateK(x = x, y = y)) }
+//        .filter { y -> y > 25 && x > 25 }
         .map { y -> CoordinateK(x = x, y = y) }
     }
 
@@ -153,13 +206,12 @@ fun spawnOrganisms(worldSize: Int, organisms: List<OrganismK>, walls: List<Coord
 }
 
 fun getRandomBrain(
-  amountOfInputs: Int,
-  amountOfOutputs: Int
+  simulationConfigurationK: SimulationConfiguration
 ): BrainK {
-
-  val hiddenLayerSizes = listOf(10, 10, 10)
-
-  val informationDimensions = listOf(amountOfInputs) + hiddenLayerSizes + listOf(amountOfOutputs)
+  val informationDimensions =
+    listOf(simulationConfigurationK.amountOfInputNeurons) + simulationConfigurationK.hiddenLayerShape + listOf(
+      simulationConfigurationK.amountOfOutputNeurons
+    )
   val layerWeights: List<NDArray<Float, D2>> = informationDimensions.windowed(2).map { (inputDim, outputDim) ->
     initPathways(inputAmount = inputDim, outputAmount = outputDim)
   }
@@ -170,14 +222,7 @@ fun getRandomBrain(
 }
 
 fun initPathways(inputAmount: Int, outputAmount: Int): NDArray<Float, D2> {
-  val old = (0..<outputAmount).map {
-    (0..inputAmount).map {
-      Random.nextFloat() * 2 - 1
-    }
-  }
-
-  val new = mk.zeros<Float>(outputAmount, inputAmount + 1).map { Random.nextFloat() * 2 - 1 }
-  return new
+  return mk.zeros<Float>(outputAmount, inputAmount + 1).map<Float, D2, Float> { Random.nextFloat() * 2 - 1 }
 }
 
 fun progressTime(world: WorldK, currentAge: Int): WorldK {
@@ -191,23 +236,65 @@ fun progressTime(world: WorldK, currentAge: Int): WorldK {
     }
 }
 
-fun progressOrganism(world: WorldK, organism: OrganismK, coordinate: CoordinateK): WorldK =
-  when (val behaviour = stateIntention(
-    brain = organism.brain,
-    northBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = 1),
-    eastBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 1, deltaY = 0),
-    southBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = -1),
-    westBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = -1, deltaY = 0),
-    x = coordinate.x,
-    y = coordinate.y,
-    age = world.age
+fun progressOrganism(world: WorldK, organism: OrganismK, coordinate: CoordinateK): WorldK {
+  return when (val behaviour = stateIntention(
+    brain = organism.species.brain,
+//    northBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = 1),
+//    eastBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 1, deltaY = 0),
+//    southBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = -1),
+//    westBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = -1, deltaY = 0),
+    inSurvivalZone = world.survivalZone.contains(coordinate),
+//    previousDirection = organism.previousCoordinate?.let { getPreviousDirection(coordinate, it) } ?: 0,
+//    x = coordinate.x,
+//    y = coordinate.y,
+//    age = world.age
+    nearestSurvivalCoordinate = getNearestSurvivalZoneDirection(world, coordinate).direction
   )) {
-//    Intention.DO_NOTHING -> world
+    Intention.DO_NOTHING -> world
     Intention.GO_NORTH,
+    Intention.GO_NORTH_EAST,
     Intention.GO_EAST,
+    Intention.GO_SOUTH_EAST,
     Intention.GO_SOUTH,
-    Intention.GO_WEST -> moveOrganism(world, coordinate, behaviour.deltaX, behaviour.deltaY)
+    Intention.GO_SOUTH_WEST,
+    Intention.GO_WEST,
+    Intention.GO_NORTH_WEST -> moveOrganism(world, coordinate, behaviour.deltaX, behaviour.deltaY)
   }
+//  val intention = getNearestSurvivalZoneDirection(world, coordinate)
+//  return moveOrganism(world, coordinate, intention.deltaX, intention.deltaY)
+}
+
+suspend fun progressTimeAsync(world: WorldK): WorldK = coroutineScope {
+  val intentions =
+    world.organismMap.entries.map {
+      async {
+        Pair(it, getIntention(world, it.value, it.key))
+      }
+    }.awaitAll()
+
+  intentions
+//    .filter { it.second !== Intention.DO_NOTHING }
+    .shuffled()
+    .fold(world) { acc, pair ->
+      moveOrganism(world = acc, coordinate = pair.first.key, deltaX = pair.second.deltaX, deltaY = pair.second.deltaY)
+    }.copy(age = world.age + 1)
+}
+
+fun getIntention(world: WorldK, organism: OrganismK, coordinate: CoordinateK): Intention =
+  stateIntention(
+    brain = organism.species.brain,
+//    northBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = 1),
+//    eastBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 1, deltaY = 0),
+//    southBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = 0, deltaY = -1),
+//    westBlocked = isTileBlocked(world = world, coordinate = coordinate, deltaX = -1, deltaY = 0),
+    inSurvivalZone = world.survivalZone.contains(coordinate),
+//    previousDirection = organism.previousCoordinate?.let { getPreviousDirection(coordinate, it) } ?: 0,
+//    x = coordinate.x,
+//    y = coordinate.y,
+//    age = world.age
+    nearestSurvivalCoordinate = getNearestSurvivalZoneDirection(world, coordinate).direction
+  )
+
 
 fun isTileBlocked(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: Int): Boolean {
   val newCoordinate = CoordinateK(coordinate.x + deltaX, coordinate.y + deltaY)
@@ -215,6 +302,11 @@ fun isTileBlocked(world: WorldK, coordinate: CoordinateK, deltaX: Int, deltaY: I
     world,
     newCoordinate
   )
+}
+
+fun getPreviousDirection(coordinate: CoordinateK, previousCoordinate: CoordinateK): Int {
+  //TODO make actual bearing
+  return coordinate.x + coordinate.y + previousCoordinate.x + previousCoordinate.y
 }
 
 fun isWithinBoundaries(world: WorldK, coordinate: CoordinateK): Boolean {
@@ -249,27 +341,60 @@ fun forwardPass(inputs: NDArray<Float, D1>, weights: List<NDArray<Float, D2>>): 
 
 fun stateIntention(
   brain: BrainK,
-  northBlocked: Boolean,
-  eastBlocked: Boolean,
-  southBlocked: Boolean,
-  westBlocked: Boolean,
-  x: Int,
-  y: Int,
-  age: Int
+//  northBlocked: Boolean,
+//  eastBlocked: Boolean,
+//  southBlocked: Boolean,
+//  westBlocked: Boolean,
+  inSurvivalZone: Boolean,
+//  previousDirection: Int,
+//  x: Int,
+//  y: Int,
+//  age: Int
+  nearestSurvivalCoordinate: Int
 ): Intention {
   val inputFloats = mk.ndarray(
     listOf(
-      northBlocked.toFloat(),
-      eastBlocked.toFloat(),
-      southBlocked.toFloat(),
-      westBlocked.toFloat(),
-      x.toFloat(),
-      y.toFloat(),
-      age.toFloat()
+//      northBlocked.toFloat(),
+//      eastBlocked.toFloat(),
+//      southBlocked.toFloat(),
+//      westBlocked.toFloat(),
+      inSurvivalZone.toFloat(),
+//      previousDirection.toFloat(),
+//      x.toFloat(),
+//      y.toFloat(),
+//      age.toFloat()
+      nearestSurvivalCoordinate.toFloat()
     )
   )
+
   val brainOutput = forwardPass(inputFloats, brain.weights)
   val outputIndex = brainOutput.indexOf(brainOutput.max() ?: throw Exception("Yolo"))
 
   return Intention.entries[outputIndex]
+}
+
+fun getNearestSurvivalZoneDirection(world: WorldK, sourceCoordinate: CoordinateK): Intention {
+  val sorted = world.survivalZone.sortedBy { targetCoordinate -> abs((sourceCoordinate.x - targetCoordinate.x)) }
+    .sortedBy { targetCoordinate -> abs(sourceCoordinate.y - targetCoordinate.y) }
+  val nearest = sorted.first()
+  val deltaX = (nearest.x - sourceCoordinate.x).let {
+    when {
+      it == 0 -> 0
+      it < 0 -> -1
+      else -> 1
+    }
+  }
+
+  val deltaY = (nearest.y - sourceCoordinate.y).let {
+    when {
+      it == 0 -> 0
+      it < 0 -> -1
+      else -> 1
+    }
+  }
+  val intention: Intention =
+    Intention.entries.find { intention -> intention.deltaX == deltaX && intention.deltaY == deltaY } ?: throw Exception(
+      deltaX.toString() + deltaY.toString(),
+    )
+  return intention
 }

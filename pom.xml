@@ -7,6 +7,7 @@
   <version>0.0.1</version>
   <name>flock-evo</name>
   <description>Evolution Simulator</description>
+  <packaging>jar</packaging>
   <properties>
     <ktor_version>2.3.5</ktor_version>
     <kotlin.code.style>official</kotlin.code.style>
@@ -105,6 +106,26 @@
       <artifactId>multik-default-jvm</artifactId>
       <groupId>org.jetbrains.kotlinx</groupId>
       <version>0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.exposed</groupId>
+      <artifactId>exposed-core</artifactId>
+      <version>0.44.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.exposed</groupId>
+      <artifactId>exposed-jdbc</artifactId>
+      <version>0.44.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.exposed</groupId>
+      <artifactId>exposed-dao</artifactId>
+      <version>0.44.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.1.214</version> <!-- ex: 1.2.140 -->
     </dependency>
   </dependencies>
   <build>

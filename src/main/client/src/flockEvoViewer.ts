@@ -1,7 +1,8 @@
 import {css, html, LitElement, nothing} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
-import {Generation} from "../../../../generated/client/models/Models";
-import {GenerationView, internalizeGeneration} from "./models/models";
+import {Generation, SimulationConfiguration} from "../../../../generated/client/models/Models";
+import {internalizeGeneration} from "./models/models";
+import {GenerationStore} from "./generationStore";
 
 @customElement('flock-evo-generations')
 export class FlockEvoViewer extends LitElement {
@@ -13,30 +14,59 @@ export class FlockEvoViewer extends LitElement {
   `;
 
   @state()
-  private generations: GenerationView[] = []
+  private simulationConfiguration: SimulationConfiguration | undefined
 
-  private websocket = new WebSocket("ws://localhost:8080/ws")
+  @state()
+  private simulationIds: number[] = []
 
-  connectedCallback() {
-    super.connectedCallback();
+  private websocket: WebSocket | undefined
 
-    this.websocket.onopen = (event) => {
-      console.log("opened");
+  configurationChange(event: CustomEvent<SimulationConfiguration>) {
+    console.log(event.detail);
+    this.simulationConfiguration = event.detail
+  }
+
+  startSimulation() {
+    this.simulationIds = []
+    this.websocket = new WebSocket("ws://localhost:8080/simulation")
+
+    const store = new GenerationStore()
+    this.websocket.onopen = async () => {
+      await store.generations.clear()
+      this.websocket!.send(JSON.stringify(this.simulationConfiguration))
     }
-
-    this.websocket.onmessage = (event) => {
-      //TODO make runtime safe
-      const generation: Generation = JSON.parse(event.data) as unknown as Generation
-      console.log(generation);
-      // generation.worlds.map(world => {});
-      this.generations = [...this.generations, internalizeGeneration(generation)];
+    this.websocket.onmessage = async (event: MessageEvent) => {
+      const data = JSON.parse(event.data) as unknown as Generation
+      const generation = internalizeGeneration(data)
+      const index = await store.generations.add(generation)
+      this.simulationIds = [...this.simulationIds, index]
     }
+    this.websocket.onclose = () => {
+      console.log("closed");
+    }
+  }
+
+  stopSimulation() {
+    this.websocket?.close()
+    this.websocket = undefined
   }
 
 
   render() {
-    return this.generations.length > 0 ? html`
-      <flock-evo-player .generations="${this.generations}"></flock-evo-player>
-    ` : nothing
+    return html`
+      <flock-evo-simulation-configuration
+        @simulation-configuration-change="${this.configurationChange}">
+      </flock-evo-simulation-configuration>
+      <br>
+      <div>
+        <button @click="${this.startSimulation}">Start</button>
+        <button @click="${this.stopSimulation}">Stop</button>
+      </div>
+      <flock-evo-player .simulationIds="${this.simulationIds}"></flock-evo-player>
+
+
+    `
+
+
   }
 }

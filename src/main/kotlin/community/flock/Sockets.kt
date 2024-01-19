@@ -1,21 +1,15 @@
 package community.flock
 
+import community.flock.wirespec.generated.SimulationConfiguration
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import java.time.Duration
-
-val config: SimulationConfiguration = SimulationConfiguration(
-  worldSize = 100,
-  numberOfGenerations = 2,
-  maximumWorldAge = 5,
-  numberOfSpecies = 2,
-  numberOfOrganismsPerSpecies = 1
-)
 
 fun Application.configureSockets() {
   install(WebSockets) {
@@ -27,17 +21,35 @@ fun Application.configureSockets() {
     contentConverter = JacksonWebsocketContentConverter()
   }
   routing {
-    webSocket("/ws") {
-      startSimulation(config)
-        .cancellable()
-        .onEach {
-          sendSerialized(it.externalize())
-          delay(50)
-        }
-        .retryWhen { cause, _ -> cause.message === "No survivors" }
-        .onCompletion { close(CloseReason(CloseReason.Codes.NORMAL, "Simulation done")) }
-        .collect()
-    }
+    webSocket("/simulation") {
+      val configuration = receiveDeserialized<SimulationConfiguration>()
+      println("received message: $configuration")
+      if (configuration.renderSimulationsWithoutSurvivors) {
+        startSimulation(configuration)
+          .cancellable()
+          .retryWhen { cause, _ -> cause.message?.startsWith("No survivors") ?: false }
+          .onEach {
+            sendSerialized(it.externalize())
+            delay(200)
+          }
+          .onCompletion { close(CloseReason(CloseReason.Codes.NORMAL, "Simulation done")) }
+          .collect()
+      } else {
+        val simulations = startSimulation(configuration)
+          .cancellable()
+          .retryWhen { cause, attempt ->
+            println("Attempt: ${attempt} | ${cause.message} generations")
+            cause.message?.startsWith("No survivors") ?: false
+          }.toList()
 
+        simulations
+          .filter { it.simulationId == simulations.last().simulationId }
+          .onEach {
+            sendSerialized(it.externalize())
+            delay(15)
+          }
+        close(CloseReason(CloseReason.Codes.NORMAL, "Simulation done"))
+      }
+    }
   }
 }

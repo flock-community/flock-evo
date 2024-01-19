@@ -2,19 +2,24 @@ import {
   Brain,
   Coordinate,
   Generation,
-  Organism,
+  Organism, Species,
   World,
   WorldEntity
 } from "../../../../../generated/client/models/Models";
 
 export interface OrganismView {
   id: string;
-  speciesId: string;
+  species: SpeciesView
   backgroundColor: string;
-  brain: BrainView;
+}
+
+export interface SpeciesView {
+  id: string,
+  brain: BrainView
 }
 
 export interface GenerationView {
+  simulationId: string
   index: number;
   worlds: WorldView[];
 }
@@ -23,6 +28,7 @@ export interface WorldView {
   size: number,
   organisms: EntityView[]
   walls: Coordinate[]
+  survivalZones: Coordinate[];
 }
 
 export interface EntityView {
@@ -46,15 +52,15 @@ export interface NodeView {
 }
 
 export const internalizeGeneration = (generation: Generation): GenerationView => {
-  const {index, worlds} = generation
+  const {index, worlds, simulationId} = generation
   const worldViews = worlds.map(world => internalizeWorld(world))
-  return {index, worlds: worldViews}
+  return {index, worlds: worldViews, simulationId}
 }
 
 export const internalizeWorld = (world: World): WorldView => {
   const {size, entities} = world;
   const entityViews = entities.map(e => internalizeEntity(e))
-  return {size, organisms: entityViews, walls: world.walls}
+  return {size, organisms: entityViews, walls: world.walls, survivalZones: world.survivalZones}
 }
 
 export const internalizeEntity = (entity: WorldEntity): EntityView => {
@@ -64,8 +70,13 @@ export const internalizeEntity = (entity: WorldEntity): EntityView => {
 }
 
 export const internalizeOrganism = (organism: Organism): OrganismView => {
-  const {id, speciesId, brain} = organism;
-  return {backgroundColor: '', id, speciesId, brain: internalizeBrain(brain)};
+  const {id, species} = organism;
+  return {backgroundColor: '', id, species: internalizeSpecies(species)};
+}
+
+export const internalizeSpecies = (species: Species): SpeciesView => {
+  const {id, brain} = species
+  return {id, brain: internalizeBrain(brain)}
 }
 
 export const internalizeBrain = (brain: Brain): BrainView => {

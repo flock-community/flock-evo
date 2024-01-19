@@ -71,7 +71,7 @@ export class EvoBrainViewer extends LitElement {
   }
 
   private determineNodeGridColumn(nodeList: NodeView[]): string {
-    let index = this.organism?.brain.nodeList.indexOf(nodeList);
+    let index = this.organism?.species.brain.nodeList.indexOf(nodeList);
     if (index === undefined) {
       return '';
     }
@@ -82,7 +82,7 @@ export class EvoBrainViewer extends LitElement {
     if (!this.organism) {
       return 0;
     }
-    return Math.max(...this.organism.brain.nodeList.map(nodeList => nodeList.length));
+    return Math.max(...this.organism.species.brain.nodeList.map(nodeList => nodeList.length));
   }
 
   private determinePathwayGridRow(pathway: PathwayView): string {
@@ -120,10 +120,10 @@ export class EvoBrainViewer extends LitElement {
 
 
   render() {
-    return this.organism?.brain ? html`
-      <div class="brain" style="--amountOfListsOfNodes: ${this.organism.brain.nodeList.length};
+    return this.organism?.species.brain ? html`
+      <div class="brain" style="--amountOfListsOfNodes: ${this.organism.species.brain.nodeList.length};
 --maxAmountOfNodesInOneList: ${this.determineMaxAmountOfNodesInOneList()}">
-        ${repeat(this.organism.brain.nodeList, (nodeList: NodeView[]) => html`
+        ${repeat(this.organism.species.brain.nodeList, (nodeList: NodeView[]) => html`
           ${repeat(nodeList, (node: NodeView) => html`
             <div class="node"
                  style="grid-row: ${this.determineNodeGridRow(nodeList, node)}; grid-column: ${this.determineNodeGridColumn(nodeList)}">
@@ -131,7 +131,7 @@ export class EvoBrainViewer extends LitElement {
             </div>
           `)}
         `)}
-        ${repeat(this.organism.brain.pathways, (pathways: PathwayView[]) => html`
+        ${repeat(this.organism.species.brain.pathways, (pathways: PathwayView[]) => html`
           ${repeat(pathways, (pathway: PathwayView) =>
             this.determineLineOrientation(pathway) === 'down-right' ? html`
             <div class="pathway down-right" style="grid-row: ${this.determinePathwayGridRow(pathway)};

@@ -1,6 +1,7 @@
 import {customElement, state, property} from "lit/decorators.js";
 import {css, html, LitElement, nothing} from "lit";
 import {GenerationView, WorldView} from "./models/models";
+import {GenerationStore} from "./generationStore";
 
 
 @customElement('flock-evo-player')
@@ -21,17 +22,14 @@ export class FlockEvoPlayer extends LitElement {
       }
     }
   `
+  @property()
+  simulationIds: number[] = []
+
   @state()
-  private currentGeneration: GenerationView | undefined;
+  private currentSimulationId: String | undefined;
 
   @state()
   private currentWorld: WorldView | undefined;
-
-  @property()
-  private generations: GenerationView[] | undefined
-
-  private currentGenerationAge = 0;
-  private currentGenerationIndex = 0;
 
   @state()
   private playerStarted: boolean = false;
@@ -39,12 +37,38 @@ export class FlockEvoPlayer extends LitElement {
   @state()
   private delayTimer: number = 1;
 
-  startPlayer() {
-    if (this.playerStarted) {
-      return;
+  private store = new GenerationStore()
+
+  private async startPlayer() {
+    await this.autoPlay(this.simulationIds[0])
+  }
+
+  private async autoPlay(index: number) {
+    const generation = await this.store.generations.get(index)
+
+    if (generation) {
+      await this.renderWorlds(generation.worlds, generation.worlds[0])
+
+      await this.autoPlay(index + 1)
     }
-    this.playerStarted = true;
-    this.playGeneration();
+  }
+
+  private async renderWorlds(worlds: WorldView[], worldView: WorldView): Promise<void> {
+    this.currentWorld = worldView
+    await this.delay(this.delayTimer)
+    const next: WorldView | undefined = worlds[worlds.indexOf(worldView) + 1]
+    if (next) {
+      await this.renderWorlds(worlds, next)
+    }
+  }
+
+  private async delay(delay: number): Promise<void> {
+    return new Promise<void>(resolve => {
+      setTimeout(() => {
+        resolve();
+      }, delay)
+    })
+
   }
 
   stopPlayer() {
@@ -63,80 +87,33 @@ export class FlockEvoPlayer extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    console.log(this.generations);
-    if (this.generations && this.generations.length > 0) {
-      this.currentGeneration = this.generations[0]
-      this.currentWorld = this.currentGeneration.worlds[0]
-    }
   }
 
-  private decreaseWorldAge() {
-    if (this.currentWorld && this.currentGeneration?.worlds[this.currentGenerationAge - 1]) {
-      this.currentWorld = this.currentGeneration?.worlds[this.currentGenerationAge - 1];
-      this.currentGenerationAge = this.currentGenerationAge - 1;
-    }
+  private changePlaybackSpeed(event: Event) {
+    const element = event.target as HTMLInputElement
+    console.log(element.value)
+    this.delayTimer = element.valueAsNumber
   }
 
   private increaseWorldAge() {
-    if (!this.playerStarted) {
-      return;
-    }
-    if (this.currentWorld) {
-      if (this.currentGeneration?.worlds[this.currentGenerationAge + 1]) {
-        this.currentWorld = this.currentGeneration?.worlds[this.currentGenerationAge + 1];
-        this.currentGenerationAge = this.currentGenerationAge + 1;
-      } else {
-        if (this.generations && this.generations[this.currentGenerationIndex + 1]) {
-          this.currentGeneration = this.generations[this.currentGenerationIndex + 1];
-          if (this.currentGeneration) {
-            this.currentWorld = this.currentGeneration.worlds[0];
-            this.currentGenerationAge = 0;
-            this.currentGenerationIndex = this.currentGenerationIndex + 1;
-          }
-        }
-      }
-
-    }
-  }
-
-  private selectGeneration(index: any) {
-    if (this.generations) {
-      this.currentGeneration = this.generations[index.target.value];
-      this.currentWorld = this.currentGeneration.worlds[0];
-      this.currentGenerationAge = 0;
-      this.currentGenerationIndex = index.target.value;
-    }
-  }
-
-  private changeDelayTimer(event: any): void {
-    console.log(event);
-    this.delayTimer = event.target.value;
   }
 
   render() {
-    return this.generations ? html`
+    return html`
+      <div>${this.simulationIds.length}</div>
+
+      <button @click="${async () => {
+        await this.startPlayer()
+      }}">Show
+      </button>
+      <input type="number" step="10" .value="${this.delayTimer}" @input="${this.changePlaybackSpeed}">
+
+      ${this.currentWorld ? html`
         <div class="evo-player__container">
-            <div class="evo-player__player">
-                Current age: ${this.currentGenerationAge}
-            </div>
-            <div>
-                Current generation: ${this.currentGenerationIndex}
-            </div>
-            <button @click="${this.increaseWorldAge}">+1</button>
-            <button @click="${this.decreaseWorldAge}">-1</button>
-            ${!this.playerStarted ? html`
-                <button @click="${this.startPlayer}">Start autoplay</button>` : nothing}
-            ${this.playerStarted ? html`
-                <button @click="${this.stopPlayer}">Stop autoplay</button>` : nothing}
-            <input type="number" step=100 min="1" value=1 @input=${this.changeDelayTimer}>
-            <select @input=${this.selectGeneration}>
-                ${this.generations.map((_, index) => html`
-                    <option value=${index}>${index}</option>
-                `)}
-            </select>
-            <flock-evo-world .world="${this.currentWorld}" class="evo-player__world"></flock-evo-world>
-        </div>
-    ` : nothing
+          <flock-evo-world .world="${this.currentWorld}" class="evo-player__world"></flock-evo-world>
+        </div>` : nothing}
+
+    `
   }
 
 
