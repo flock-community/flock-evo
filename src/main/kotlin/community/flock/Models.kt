@@ -65,13 +65,23 @@ fun BrainK.externalize(): Brain {
 }
 
 enum class Intention(val deltaX: Int, val deltaY: Int, val direction: Int) {
-    DO_NOTHING(0, 0, 0),
+  DO_NOTHING(0, 0, 0),
   GO_NORTH(0, 1, 1),
   GO_NORTH_EAST(1, 1, 2),
   GO_EAST(1, 0, 3),
   GO_SOUTH_EAST(-1, 1, 4),
   GO_SOUTH(0, -1, 5),
   GO_SOUTH_WEST(-1, -1, 6),
-  GO_WEST(-1, 0,7),
-  GO_NORTH_WEST(1, -1,8),
+  GO_WEST(-1, 0, 7),
+  GO_NORTH_WEST(1, -1, 8),
+  ;
+
+  companion object {
+    private val intentionByDelta = entries.associateBy { Pair(it.deltaX, it.deltaY) }
+
+    fun findByDelta(deltaX: Int, deltaY: Int): Intention {
+      return intentionByDelta[Pair(deltaX, deltaY)]
+        ?: error("Invalid intentention, deltaX = $deltaX, deltaY = $deltaY")
+    }
+  }
 }

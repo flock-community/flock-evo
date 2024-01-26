@@ -1,6 +1,5 @@
 package community.flock
 
-import community.flock.wirespec.generated.Coordinate
 import community.flock.wirespec.generated.SimulationConfiguration
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -16,6 +15,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.NDArray
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
 import java.util.UUID
 import kotlin.math.abs
+import kotlin.math.sign
 import kotlin.math.tanh
 import kotlin.random.Random
 
@@ -374,27 +374,16 @@ fun stateIntention(
 }
 
 fun getNearestSurvivalZoneDirection(world: WorldK, sourceCoordinate: CoordinateK): Intention {
-  val sorted = world.survivalZone.sortedBy { targetCoordinate -> abs((sourceCoordinate.x - targetCoordinate.x)) }
-    .sortedBy { targetCoordinate -> abs(sourceCoordinate.y - targetCoordinate.y) }
-  val nearest = sorted.first()
-  val deltaX = (nearest.x - sourceCoordinate.x).let {
-    when {
-      it == 0 -> 0
-      it < 0 -> -1
-      else -> 1
-    }
-  }
+  val nearest = world.survivalZone
+    .minBy { targetCoordinate ->
+      val deltaX = abs(sourceCoordinate.x - targetCoordinate.x)
+      val deltaY = abs(sourceCoordinate.y - targetCoordinate.y)
 
-  val deltaY = (nearest.y - sourceCoordinate.y).let {
-    when {
-      it == 0 -> 0
-      it < 0 -> -1
-      else -> 1
+      deltaX * deltaX + deltaY * deltaY
     }
-  }
-  val intention: Intention =
-    Intention.entries.find { intention -> intention.deltaX == deltaX && intention.deltaY == deltaY } ?: throw Exception(
-      deltaX.toString() + deltaY.toString(),
-    )
-  return intention
+
+  val deltaX = (nearest.x - sourceCoordinate.x).sign
+  val deltaY = (nearest.y - sourceCoordinate.y).sign
+
+  return Intention.findByDelta(deltaX, deltaY)
 }
